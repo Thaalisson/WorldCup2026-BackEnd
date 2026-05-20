@@ -10,4 +10,6 @@ public interface IPredictionRepository
     Task<IReadOnlyList<Prediction>> GetByMatchAndPoolAsync(Guid matchId, Guid poolId);
     Task AddAsync(Prediction prediction);
     Task UpdateAsync(Prediction prediction);
+    Task<int> BulkUpsertAsync(IReadOnlyList<Prediction> toAdd, IReadOnlyList<Prediction> toUpdate);
+}
 }

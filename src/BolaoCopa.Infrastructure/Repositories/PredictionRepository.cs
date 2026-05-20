@@ -34,4 +34,12 @@ public class PredictionRepository : IPredictionRepository
         _context.Predictions.Update(prediction);
         await _context.SaveChangesAsync();
     }
+
+    public async Task<int> BulkUpsertAsync(IReadOnlyList<Prediction> toAdd, IReadOnlyList<Prediction> toUpdate)
+    {
+        if (toAdd.Count > 0) await _context.Predictions.AddRangeAsync(toAdd);
+        if (toUpdate.Count > 0) _context.Predictions.UpdateRange(toUpdate);
+        await _context.SaveChangesAsync();
+        return toAdd.Count + toUpdate.Count;
+    }
 }

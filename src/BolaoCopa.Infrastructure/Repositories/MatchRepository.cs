@@ -39,6 +39,9 @@ public class MatchRepository : IMatchRepository
     public Task<Match?> GetByIdAsync(Guid id) =>
         _context.Matches.FindAsync(id).AsTask();
 
+    public async Task<IReadOnlyList<Match>> GetByIdsAsync(IEnumerable<Guid> ids) =>
+        await _context.Matches.Where(m => ids.Contains(m.Id)).ToListAsync();
+
     public Task<Match?> GetByApiFixtureIdAsync(int apiFixtureId) =>
         _context.Matches.FirstOrDefaultAsync(m => m.ApiFootballFixtureId == apiFixtureId);
 

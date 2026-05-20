@@ -77,4 +77,57 @@ public class PredictionsController : ControllerBase
 
         return Ok(existing);
     }
+
+    [HttpPost("bulk")]
+    public async Task<IActionResult> BulkCreateOrUpdate([FromBody] BulkPredictionRequest request)
+    {
+        if (request.Predictions.Count == 0)
+            return BadRequest("Nenhum palpite enviado.");
+
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var now = DateTime.UtcNow;
+
+        var matchIds = request.Predictions.Select(p => p.MatchId).Distinct().ToList();
+        var matches = await _matchRepository.GetByIdsAsync(matchIds);
+        var matchMap = matches.ToDictionary(m => m.Id);
+
+        var existingPredictions = await _predictionRepository.GetByUserAndPoolAsync(userId, request.PoolId);
+        var existingMap = existingPredictions.ToDictionary(p => p.MatchId);
+
+        var toAdd = new List<Prediction>();
+        var toUpdate = new List<Prediction>();
+        var skipped = new List<Guid>();
+
+        foreach (var item in request.Predictions)
+        {
+            if (!matchMap.TryGetValue(item.MatchId, out var match) || match.KickoffAt <= now)
+            {
+                skipped.Add(item.MatchId);
+                continue;
+            }
+
+            if (existingMap.TryGetValue(item.MatchId, out var existing))
+            {
+                existing.HomeScorePrediction = item.HomeScorePrediction;
+                existing.AwayScorePrediction = item.AwayScorePrediction;
+                existing.UpdatedAt = now;
+                toUpdate.Add(existing);
+            }
+            else
+            {
+                toAdd.Add(new Prediction
+                {
+                    Id = Guid.NewGuid(),
+                    PoolId = request.PoolId,
+                    UserId = userId,
+                    MatchId = item.MatchId,
+                    HomeScorePrediction = item.HomeScorePrediction,
+                    AwayScorePrediction = item.AwayScorePrediction,
+                });
+            }
+        }
+
+        var saved = await _predictionRepository.BulkUpsertAsync(toAdd, toUpdate);
+        return Ok(new { saved, skipped = skipped.Count });
+    }
 }
