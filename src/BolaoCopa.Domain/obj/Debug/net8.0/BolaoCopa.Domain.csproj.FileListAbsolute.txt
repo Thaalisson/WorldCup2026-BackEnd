@@ -1,0 +1,11 @@
+C:\Users\thali\Downloads\bolao-copa-2026\backend\src\BolaoCopa.Domain\obj\Debug\net8.0\BolaoCopa.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\thali\Downloads\bolao-copa-2026\backend\src\BolaoCopa.Domain\bin\Debug\net8.0\BolaoCopa.Domain.deps.json
+C:\Users\thali\Downloads\bolao-copa-2026\backend\src\BolaoCopa.Domain\bin\Debug\net8.0\BolaoCopa.Domain.dll
+C:\Users\thali\Downloads\bolao-copa-2026\backend\src\BolaoCopa.Domain\bin\Debug\net8.0\BolaoCopa.Domain.pdb
+C:\Users\thali\Downloads\bolao-copa-2026\backend\src\BolaoCopa.Domain\obj\Debug\net8.0\BolaoCopa.Domain.AssemblyInfoInputs.cache
+C:\Users\thali\Downloads\bolao-copa-2026\backend\src\BolaoCopa.Domain\obj\Debug\net8.0\BolaoCopa.Domain.AssemblyInfo.cs
+C:\Users\thali\Downloads\bolao-copa-2026\backend\src\BolaoCopa.Domain\obj\Debug\net8.0\BolaoCopa.Domain.csproj.CoreCompileInputs.cache
+C:\Users\thali\Downloads\bolao-copa-2026\backend\src\BolaoCopa.Domain\obj\Debug\net8.0\BolaoCopa.Domain.dll
+C:\Users\thali\Downloads\bolao-copa-2026\backend\src\BolaoCopa.Domain\obj\Debug\net8.0\refint\BolaoCopa.Domain.dll
+C:\Users\thali\Downloads\bolao-copa-2026\backend\src\BolaoCopa.Domain\obj\Debug\net8.0\BolaoCopa.Domain.pdb
+C:\Users\thali\Downloads\bolao-copa-2026\backend\src\BolaoCopa.Domain\obj\Debug\net8.0\ref\BolaoCopa.Domain.dll

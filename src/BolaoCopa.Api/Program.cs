@@ -1,0 +1,136 @@
+using System.Text;
+using BolaoCopa.Application.Interfaces;
+using BolaoCopa.Application.Services;
+using BolaoCopa.Infrastructure.Data;
+using BolaoCopa.Infrastructure.ExternalApi;
+using BolaoCopa.Infrastructure.Repositories;
+using Hangfire;
+using Hangfire.PostgreSql;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using BolaoCopa.Api.Jobs;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
+    });
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+// Banco de dados
+var connStr = builder.Configuration.GetConnectionString("DefaultConnection")!;
+builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connStr));
+
+// JWT
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]!))
+        };
+    });
+
+// Hangfire (usa o mesmo SQL Server)
+builder.Services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(c => c.UseNpgsqlConnection(connStr)));
+builder.Services.AddHangfireServer();
+
+// HttpClient para api-football.com
+builder.Services.AddHttpClient<IFootballApiClient, FootballApiClient>(client =>
+{
+    client.BaseAddress = new Uri("https://v3.football.api-sports.io/");
+    client.DefaultRequestHeaders.Add("x-apisports-key", builder.Configuration["ApiFootball:ApiKey"]);
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// Serviços de domínio
+builder.Services.AddScoped<IScoringService, ScoringService>();
+builder.Services.AddScoped<IRankingService, RankingService>();
+builder.Services.AddScoped<IMatchSyncService, MatchSyncService>();
+
+// Repositórios
+builder.Services.AddScoped<IMatchRepository, MatchRepository>();
+builder.Services.AddScoped<IPredictionRepository, PredictionRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IPoolRepository, PoolRepository>();
+builder.Services.AddScoped<ITeamRepository, TeamRepository>();
+builder.Services.AddScoped<IChampionPredictionRepository, ChampionPredictionRepository>();
+builder.Services.AddScoped<IFeedRepository, FeedRepository>();
+builder.Services.AddScoped<IRankingSnapshotRepository, RankingSnapshotRepository>();
+builder.Services.AddScoped<IGroupPredictionRepository, GroupPredictionRepository>();
+
+// Jobs
+builder.Services.AddScoped<ResultSyncJob>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+    {
+        var raw = builder.Configuration["Cors:AllowedOrigins"] ?? "http://localhost:5173";
+        var origins = raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        policy.AllowAnyHeader().AllowAnyMethod().WithOrigins(origins);
+    });
+});
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+if (app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
+
+app.UseCors("Frontend");
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Dashboard do Hangfire (acessível em /hangfire)
+app.UseHangfireDashboard("/hangfire");
+
+app.MapControllers();
+
+// Job: roda a cada 30 min — só faz chamada externa durante 11/06 a 20/07/2026
+RecurringJob.AddOrUpdate<ResultSyncJob>(
+    "sync-match-results",
+    job => job.RunAsync(),
+    "*/30 * * * *",
+    new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+app.Run();

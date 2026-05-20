@@ -1,0 +1,18 @@
+Crie a solution real com estes comandos:
+
+dotnet new sln -n BolaoCopa
+dotnet new classlib -n BolaoCopa.Domain -o src/BolaoCopa.Domain
+dotnet new classlib -n BolaoCopa.Application -o src/BolaoCopa.Application
+dotnet new classlib -n BolaoCopa.Infrastructure -o src/BolaoCopa.Infrastructure
+dotnet new webapi -n BolaoCopa.Api -o src/BolaoCopa.Api
+
+dotnet sln add src/BolaoCopa.Domain/BolaoCopa.Domain.csproj
+dotnet sln add src/BolaoCopa.Application/BolaoCopa.Application.csproj
+dotnet sln add src/BolaoCopa.Infrastructure/BolaoCopa.Infrastructure.csproj
+dotnet sln add src/BolaoCopa.Api/BolaoCopa.Api.csproj
+
+dotnet add src/BolaoCopa.Application/BolaoCopa.Application.csproj reference src/BolaoCopa.Domain/BolaoCopa.Domain.csproj
+dotnet add src/BolaoCopa.Infrastructure/BolaoCopa.Infrastructure.csproj reference src/BolaoCopa.Application/BolaoCopa.Application.csproj
+dotnet add src/BolaoCopa.Infrastructure/BolaoCopa.Infrastructure.csproj reference src/BolaoCopa.Domain/BolaoCopa.Domain.csproj
+dotnet add src/BolaoCopa.Api/BolaoCopa.Api.csproj reference src/BolaoCopa.Application/BolaoCopa.Application.csproj
+dotnet add src/BolaoCopa.Api/BolaoCopa.Api.csproj reference src/BolaoCopa.Infrastructure/BolaoCopa.Infrastructure.csproj
