@@ -52,8 +52,8 @@ public class AuthController : ControllerBase
         };
 
         await _users.AddAsync(user);
-        await SetAuthCookiesAsync(user);
-        return Ok(new UserInfoResponse(user.Id, user.Name, user.Email, user.IsAdmin));
+        var token = await SetAuthCookiesAsync(user);
+        return Ok(new UserInfoResponse(user.Id, user.Name, user.Email, user.IsAdmin, token));
     }
 
     [HttpPost("login")]
@@ -64,8 +64,8 @@ public class AuthController : ControllerBase
         if (user is null || !PasswordHasher.Verify(request.Password, user.PasswordHash))
             return Unauthorized("E-mail ou senha inválidos.");
 
-        await SetAuthCookiesAsync(user);
-        return Ok(new UserInfoResponse(user.Id, user.Name, user.Email, user.IsAdmin));
+        var token = await SetAuthCookiesAsync(user);
+        return Ok(new UserInfoResponse(user.Id, user.Name, user.Email, user.IsAdmin, token));
     }
 
     [HttpPost("refresh")]
@@ -91,8 +91,8 @@ public class AuthController : ControllerBase
 
         // Rotate: revoke old, issue new
         await _refreshTokens.RevokeAsync(stored);
-        await SetAuthCookiesAsync(user);
-        return Ok();
+        var token = await SetAuthCookiesAsync(user);
+        return Ok(new { token });
     }
 
     [HttpPost("logout")]
@@ -109,7 +109,7 @@ public class AuthController : ControllerBase
         return Ok();
     }
 
-    private async Task SetAuthCookiesAsync(User user)
+    private async Task<string> SetAuthCookiesAsync(User user)
     {
         var accessToken = GenerateAccessToken(user);
 
@@ -139,6 +139,8 @@ public class AuthController : ControllerBase
             Expires = DateTimeOffset.UtcNow.AddDays(30),
             Path = "/api/auth"
         });
+
+        return accessToken;
     }
 
     private void ClearAuthCookies()
@@ -174,4 +176,4 @@ public class AuthController : ControllerBase
     }
 }
 
-public record UserInfoResponse(Guid UserId, string Name, string Email, bool IsAdmin);
+public record UserInfoResponse(Guid UserId, string Name, string Email, bool IsAdmin, string Token);
