@@ -7,6 +7,7 @@ public interface IMatchRepository
 {
     Task<IReadOnlyList<MatchWithTeamsDto>> GetAllWithTeamsAsync();
     Task<Match?> GetByIdAsync(Guid id);
+    Task<IReadOnlyList<Match>> GetByIdsAsync(IEnumerable<Guid> ids);
     Task<Match?> GetByApiFixtureIdAsync(int apiFixtureId);
     Task<IReadOnlyList<Match>> GetFinishedMatchesAsync();
     Task AddAsync(Match match);

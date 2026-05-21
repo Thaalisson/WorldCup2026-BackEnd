@@ -83,6 +83,7 @@ public class PoolsController : ControllerBase
     [HttpGet("{id:guid}/ranking")]
     public async Task<IActionResult> GetRanking(Guid id)
     {
+        if (!await _pools.IsParticipantAsync(id, GetUserId())) return Forbid();
         var ranking = await _pools.GetRankingAsync(id);
         return Ok(ranking);
     }
@@ -90,6 +91,7 @@ public class PoolsController : ControllerBase
     [HttpGet("{id:guid}/feed")]
     public async Task<IActionResult> GetFeed(Guid id)
     {
+        if (!await _pools.IsParticipantAsync(id, GetUserId())) return Forbid();
         var events = await _feed.GetByPoolIdAsync(id, 30);
         var result = events.Select(e => new FeedEventDto(
             e.Id,
@@ -106,6 +108,7 @@ public class PoolsController : ControllerBase
     public async Task<IActionResult> GetRankingEvolution(Guid id)
     {
         var userId = GetUserId();
+        if (!await _pools.IsParticipantAsync(id, userId)) return Forbid();
         var snapshots = await _snapshots.GetByPoolAndUserAsync(id, userId);
 
         // Round display order
@@ -124,6 +127,7 @@ public class PoolsController : ControllerBase
     [HttpGet("{id:guid}/scoring-config")]
     public async Task<IActionResult> GetScoringConfig(Guid id)
     {
+        if (!await _pools.IsParticipantAsync(id, GetUserId())) return Forbid();
         var pool = await _pools.GetByIdAsync(id);
         if (pool is null) return NotFound();
         return Ok(new ScoringConfigDto(

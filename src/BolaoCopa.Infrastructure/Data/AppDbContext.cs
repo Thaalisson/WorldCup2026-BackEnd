@@ -18,10 +18,12 @@ public class AppDbContext : DbContext
     public DbSet<FeedEvent> FeedEvents => Set<FeedEvent>();
     public DbSet<RankingSnapshot> RankingSnapshots => Set<RankingSnapshot>();
     public DbSet<GroupPrediction> GroupPredictions => Set<GroupPrediction>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<User>().HasIndex(x => x.Email).IsUnique();
+        modelBuilder.Entity<RefreshToken>().HasIndex(x => x.Token);
         modelBuilder.Entity<Pool>().HasIndex(x => x.InviteCode).IsUnique();
         modelBuilder.Entity<Team>().HasIndex(x => x.Code).IsUnique();
         modelBuilder.Entity<Prediction>()

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Occ1nKDYEA4=",
+  "dgSpecHash": "gnr+Sa59Db4=",
   "success": true,
-  "projectFilePath": "C:\\Users\\thali\\Downloads\\bolao-copa-2026\\backend\\src\\BolaoCopa.Infrastructure\\BolaoCopa.Infrastructure.csproj",
+  "projectFilePath": "C:\\Projetos_2025\\BolaoDaCopa\\WorldCup2026-BackEnd\\src\\BolaoCopa.Infrastructure\\BolaoCopa.Infrastructure.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\thali\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\thali\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\6.0.0\\microsoft.bcl.asyncinterfaces.6.0.0.nupkg.sha512",

@@ -69,6 +69,9 @@ public class AdminController : ControllerBase
         var match = await _matches.GetByIdAsync(matchId);
         if (match is null) return NotFound();
 
+        if (request.HomeScore < 0 || request.HomeScore > 30 || request.AwayScore < 0 || request.AwayScore > 30)
+            return BadRequest("Placar fora do intervalo permitido (0–30).");
+
         match.HomeScore = request.HomeScore;
         match.AwayScore = request.AwayScore;
         match.IsFinished = true;
