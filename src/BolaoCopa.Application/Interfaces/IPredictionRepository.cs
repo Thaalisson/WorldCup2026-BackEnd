@@ -12,4 +12,3 @@ public interface IPredictionRepository
     Task UpdateAsync(Prediction prediction);
     Task<int> BulkUpsertAsync(IReadOnlyList<Prediction> toAdd, IReadOnlyList<Prediction> toUpdate);
 }
-}

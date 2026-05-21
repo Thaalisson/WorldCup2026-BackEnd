@@ -14,17 +14,21 @@ public class GroupPredictionsController : ControllerBase
 {
     private readonly IGroupPredictionRepository _repo;
     private readonly ITeamRepository _teams;
+    private readonly IPoolRepository _pools;
 
-    public GroupPredictionsController(IGroupPredictionRepository repo, ITeamRepository teams)
+    public GroupPredictionsController(IGroupPredictionRepository repo, ITeamRepository teams, IPoolRepository pools)
     {
         _repo = repo;
         _teams = teams;
+        _pools = pools;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetMyPredictions([FromQuery] Guid poolId)
     {
         var userId = GetUserId();
+        if (!await _pools.IsParticipantAsync(poolId, userId)) return Forbid();
+
         var predictions = await _repo.GetByUserAndPoolAsync(userId, poolId);
         var allTeams = await _teams.GetAllAsync();
         var teamMap = allTeams.ToDictionary(t => t.Id);
@@ -37,6 +41,8 @@ public class GroupPredictionsController : ControllerBase
     public async Task<IActionResult> Upsert([FromBody] UpsertGroupPredictionRequest request)
     {
         var userId = GetUserId();
+        if (!await _pools.IsParticipantAsync(request.PoolId, userId)) return Forbid();
+
         var existing = await _repo.GetByUserPoolAndGroupAsync(userId, request.PoolId, request.GroupName);
 
         if (existing is not null)

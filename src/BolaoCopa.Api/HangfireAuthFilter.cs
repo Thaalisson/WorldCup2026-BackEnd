@@ -52,6 +52,10 @@ public class HangfireAuthFilter : IDashboardAuthorizationFilter
         var auth = ctx.Request.Headers.Authorization.FirstOrDefault();
         if (auth?.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) == true)
             return auth["Bearer ".Length..].Trim();
+
+        if (ctx.Request.Cookies.TryGetValue("access_token", out var cookie))
+            return cookie;
+
         return ctx.Request.Query["access_token"];
     }
 }

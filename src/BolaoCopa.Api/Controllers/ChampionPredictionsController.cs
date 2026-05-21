@@ -14,17 +14,21 @@ public class ChampionPredictionsController : ControllerBase
 {
     private readonly IChampionPredictionRepository _repo;
     private readonly ITeamRepository _teams;
+    private readonly IPoolRepository _pools;
 
-    public ChampionPredictionsController(IChampionPredictionRepository repo, ITeamRepository teams)
+    public ChampionPredictionsController(IChampionPredictionRepository repo, ITeamRepository teams, IPoolRepository pools)
     {
         _repo = repo;
         _teams = teams;
+        _pools = pools;
     }
 
     [HttpGet("me")]
     public async Task<IActionResult> GetMine([FromQuery] Guid poolId)
     {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var userId = GetUserId();
+        if (!await _pools.IsParticipantAsync(poolId, userId)) return Forbid();
+
         var prediction = await _repo.GetByUserAndPoolAsync(userId, poolId);
         if (prediction is null) return NoContent();
 
@@ -35,7 +39,8 @@ public class ChampionPredictionsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Save([FromBody] SaveChampionPredictionRequest request)
     {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var userId = GetUserId();
+        if (!await _pools.IsParticipantAsync(request.PoolId, userId)) return Forbid();
 
         var existing = await _repo.GetByUserAndPoolAsync(userId, request.PoolId);
 
@@ -85,4 +90,7 @@ public class ChampionPredictionsController : ControllerBase
             p.PointsEarned
         );
     }
+
+    private Guid GetUserId() =>
+        Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 }

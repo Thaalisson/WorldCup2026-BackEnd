@@ -15,21 +15,26 @@ public class PredictionsController : ControllerBase
     private readonly IPredictionRepository _predictionRepository;
     private readonly IMatchRepository _matchRepository;
     private readonly IScoringService _scoringService;
+    private readonly IPoolRepository _pools;
 
     public PredictionsController(
         IPredictionRepository predictionRepository,
         IMatchRepository matchRepository,
-        IScoringService scoringService)
+        IScoringService scoringService,
+        IPoolRepository pools)
     {
         _predictionRepository = predictionRepository;
         _matchRepository = matchRepository;
         _scoringService = scoringService;
+        _pools = pools;
     }
 
     [HttpGet("me")]
     public async Task<IActionResult> GetMyPredictions([FromQuery] Guid poolId)
     {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var userId = GetUserId();
+        if (!await _pools.IsParticipantAsync(poolId, userId)) return Forbid();
+
         var predictions = await _predictionRepository.GetByUserAndPoolAsync(userId, poolId);
 
         var result = predictions.Select(p => new PredictionDto(
@@ -47,7 +52,8 @@ public class PredictionsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateOrUpdate([FromBody] CreatePredictionRequest request)
     {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var userId = GetUserId();
+        if (!await _pools.IsParticipantAsync(request.PoolId, userId)) return Forbid();
 
         var match = await _matchRepository.GetByIdAsync(request.MatchId);
         if (match is null) return NotFound("Jogo não encontrado.");
@@ -84,7 +90,9 @@ public class PredictionsController : ControllerBase
         if (request.Predictions.Count == 0)
             return BadRequest("Nenhum palpite enviado.");
 
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var userId = GetUserId();
+        if (!await _pools.IsParticipantAsync(request.PoolId, userId)) return Forbid();
+
         var now = DateTime.UtcNow;
 
         var matchIds = request.Predictions.Select(p => p.MatchId).Distinct().ToList();
@@ -130,4 +138,7 @@ public class PredictionsController : ControllerBase
         var saved = await _predictionRepository.BulkUpsertAsync(toAdd, toUpdate);
         return Ok(new { saved, skipped = skipped.Count });
     }
+
+    private Guid GetUserId() =>
+        Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 }

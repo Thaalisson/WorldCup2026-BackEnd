@@ -47,7 +47,7 @@ builder.Services.AddSwaggerGen(c =>
 var connStr = builder.Configuration.GetConnectionString("DefaultConnection")!;
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connStr));
 
-// JWT
+// JWT — reads token from HttpOnly cookie or Authorization header
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -61,6 +61,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]!))
+        };
+        options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+        {
+            OnMessageReceived = ctx =>
+            {
+                if (ctx.Request.Cookies.TryGetValue("access_token", out var token))
+                    ctx.Token = token;
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -95,6 +104,7 @@ builder.Services.AddScoped<IChampionPredictionRepository, ChampionPredictionRepo
 builder.Services.AddScoped<IFeedRepository, FeedRepository>();
 builder.Services.AddScoped<IRankingSnapshotRepository, RankingSnapshotRepository>();
 builder.Services.AddScoped<IGroupPredictionRepository, GroupPredictionRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
 // Jobs
 builder.Services.AddScoped<ResultSyncJob>();
@@ -105,7 +115,7 @@ builder.Services.AddCors(options =>
     {
         var raw = builder.Configuration["Cors:AllowedOrigins"] ?? "http://localhost:5173";
         var origins = raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        policy.AllowAnyHeader().AllowAnyMethod().WithOrigins(origins);
+        policy.AllowAnyHeader().AllowAnyMethod().WithOrigins(origins).AllowCredentials();
     });
 });
 
@@ -156,6 +166,24 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 });
 
 app.MapControllers();
+
+// Ensure RefreshTokens table exists (idempotent — safe to run on every startup)
+await using (var startupScope = app.Services.CreateAsyncScope())
+{
+    var db = startupScope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.ExecuteSqlRawAsync(@"
+        CREATE TABLE IF NOT EXISTS ""RefreshTokens"" (
+            ""Id""         uuid                        NOT NULL,
+            ""UserId""     uuid                        NOT NULL,
+            ""Token""      text                        NOT NULL,
+            ""ExpiresAt""  timestamp with time zone    NOT NULL,
+            ""IsRevoked""  boolean                     NOT NULL DEFAULT false,
+            ""CreatedAt""  timestamp with time zone    NOT NULL DEFAULT NOW(),
+            CONSTRAINT ""PK_RefreshTokens"" PRIMARY KEY (""Id"")
+        );
+        CREATE INDEX IF NOT EXISTS ""IX_RefreshTokens_Token"" ON ""RefreshTokens"" (""Token"");
+    ");
+}
 
 // Job: roda a cada 30 min — só faz chamada externa durante 11/06 a 20/07/2026
 RecurringJob.AddOrUpdate<ResultSyncJob>(
