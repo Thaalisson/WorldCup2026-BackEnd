@@ -6,6 +6,7 @@ using BolaoCopa.Application.Interfaces;
 using BolaoCopa.Domain.Entities;
 using BolaoCopa.Infrastructure.Helpers;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 
 namespace BolaoCopa.Api.Controllers;
@@ -26,6 +27,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [EnableRateLimiting("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Name) ||
@@ -52,6 +54,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var user = await _users.GetByEmailAsync(request.Email);

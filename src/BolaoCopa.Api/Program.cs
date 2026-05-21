@@ -1,4 +1,6 @@
 using System.Text;
+using System.Threading.RateLimiting;
+using BolaoCopa.Api;
 using BolaoCopa.Application.Interfaces;
 using BolaoCopa.Application.Services;
 using BolaoCopa.Infrastructure.Data;
@@ -7,6 +9,7 @@ using BolaoCopa.Infrastructure.Repositories;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using BolaoCopa.Api.Jobs;
@@ -106,6 +109,25 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("login", opt =>
+    {
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.PermitLimit = 10;
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+    options.AddFixedWindowLimiter("register", opt =>
+    {
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.PermitLimit = 5;
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -118,11 +140,20 @@ if (app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 
 app.UseCors("Frontend");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Dashboard do Hangfire (acessível em /hangfire)
-app.UseHangfireDashboard("/hangfire");
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[]
+    {
+        new HangfireAuthFilter(
+            app.Configuration["Jwt:Secret"]!,
+            app.Configuration["Jwt:Issuer"]!,
+            app.Configuration["Jwt:Audience"]!)
+    }
+});
 
 app.MapControllers();
 
