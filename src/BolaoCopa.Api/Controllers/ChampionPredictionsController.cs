@@ -36,9 +36,14 @@ public class ChampionPredictionsController : ControllerBase
         return Ok(dto);
     }
 
+    private static readonly DateTime TournamentStart = new(2026, 6, 11, 12, 0, 0, DateTimeKind.Utc);
+
     [HttpPost]
     public async Task<IActionResult> Save([FromBody] SaveChampionPredictionRequest request)
     {
+        if (DateTime.UtcNow >= TournamentStart)
+            return BadRequest("Palpite de campeão bloqueado — torneio já iniciou.");
+
         var userId = GetUserId();
         if (!await _pools.IsParticipantAsync(request.PoolId, userId)) return Forbid();
 

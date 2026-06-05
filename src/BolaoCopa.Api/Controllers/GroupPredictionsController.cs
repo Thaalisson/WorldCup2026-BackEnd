@@ -37,9 +37,14 @@ public class GroupPredictionsController : ControllerBase
         return Ok(result);
     }
 
+    private static readonly DateTime TournamentStart = new(2026, 6, 11, 12, 0, 0, DateTimeKind.Utc);
+
     [HttpPost]
     public async Task<IActionResult> Upsert([FromBody] UpsertGroupPredictionRequest request)
     {
+        if (DateTime.UtcNow >= TournamentStart)
+            return BadRequest("Palpites de classificação bloqueados — torneio já iniciou.");
+
         var userId = GetUserId();
         if (!await _pools.IsParticipantAsync(request.PoolId, userId)) return Forbid();
 
