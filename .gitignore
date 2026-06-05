@@ -1,0 +1,22 @@
+## .NET build output
+bin/
+obj/
+*.user
+
+## ASP.NET
+appsettings*.json
+!appsettings.json
+
+## Rider / VS / VSCode
+.idea/
+.vs/
+*.suo
+*.userprefs
+.vscode/
+
+## NuGet
+*.nupkg
+.packages/
+
+## Publish output
+publish/
