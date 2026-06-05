@@ -1,22 +1,28 @@
-## .NET build output
+# Build outputs
 bin/
 obj/
+
+# User-specific & local config
 *.user
-
-## ASP.NET
-appsettings*.json
-!appsettings.json
-
-## Rider / VS / VSCode
-.idea/
-.vs/
 *.suo
 *.userprefs
-.vscode/
+.vs/
+appsettings.local.json
+appsettings.*.local.json
 
-## NuGet
+# NuGet
 *.nupkg
 .packages/
+.nuget/
 
-## Publish output
+# Rider / VS Code / VSCode
+.idea/
+.vscode/
+*.DotSettings.user
+
+# Publish output
 publish/
+
+# OS
+.DS_Store
+Thumbs.db
