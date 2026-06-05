@@ -23,11 +23,14 @@ public class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<User>().HasIndex(x => x.Email).IsUnique();
-        modelBuilder.Entity<RefreshToken>().HasIndex(x => x.Token);
         modelBuilder.Entity<Pool>().HasIndex(x => x.InviteCode).IsUnique();
         modelBuilder.Entity<Team>().HasIndex(x => x.Code).IsUnique();
         modelBuilder.Entity<Prediction>()
-            .HasIndex(x => new { x.PoolId, x.UserId, x.MatchId })
-            .IsUnique();
+            .HasIndex(x => new { x.PoolId, x.UserId, x.MatchId }).IsUnique();
+        modelBuilder.Entity<Prediction>().HasIndex(x => x.MatchId);
+        modelBuilder.Entity<PoolParticipant>().HasIndex(x => x.UserId);
+        modelBuilder.Entity<FeedEvent>().HasIndex(x => new { x.PoolId, x.OccurredAt });
+        modelBuilder.Entity<RefreshToken>().HasIndex(x => x.Token);
+        modelBuilder.Entity<RefreshToken>().HasIndex(x => new { x.UserId, x.IsRevoked });
     }
 }

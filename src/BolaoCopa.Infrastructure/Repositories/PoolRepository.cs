@@ -20,19 +20,27 @@ public class PoolRepository : IPoolRepository
 
     public async Task<IReadOnlyList<PoolDto>> GetByUserIdAsync(Guid userId)
     {
-        return await (
+        var pools = await (
             from pp in _context.PoolParticipants
             join p in _context.Pools on pp.PoolId equals p.Id
             where pp.UserId == userId
-            select new PoolDto(
-                p.Id,
-                p.Name,
-                p.Description,
-                p.IsPrivate,
-                p.InviteCode,
-                _context.PoolParticipants.Count(x => x.PoolId == p.Id)
-            )
+            select new { p.Id, p.Name, p.Description, p.IsPrivate, p.InviteCode }
         ).ToListAsync();
+
+        if (pools.Count == 0) return Array.Empty<PoolDto>();
+
+        var ids = pools.Select(p => p.Id).ToList();
+        var counts = await _context.PoolParticipants
+            .Where(pp => ids.Contains(pp.PoolId))
+            .GroupBy(pp => pp.PoolId)
+            .Select(g => new { PoolId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.PoolId, g => g.Count);
+
+        return pools
+            .Select(p => new PoolDto(
+                p.Id, p.Name, p.Description, p.IsPrivate, p.InviteCode,
+                counts.GetValueOrDefault(p.Id, 0)))
+            .ToList();
     }
 
     public async Task AddAsync(Pool pool)
