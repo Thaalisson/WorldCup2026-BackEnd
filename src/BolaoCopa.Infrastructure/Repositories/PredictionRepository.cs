@@ -42,4 +42,7 @@ public class PredictionRepository : IPredictionRepository
         await _context.SaveChangesAsync();
         return toAdd.Count + toUpdate.Count;
     }
+
+    public async Task<IReadOnlyList<Prediction>> GetByUserAsync(Guid userId) =>
+        await _context.Predictions.Where(x => x.UserId == userId).ToListAsync();
 }

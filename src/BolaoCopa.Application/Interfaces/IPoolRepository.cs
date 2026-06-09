@@ -15,5 +15,6 @@ public interface IPoolRepository
     Task<PoolParticipant?> GetParticipantAsync(Guid poolId, Guid userId);
     Task<IReadOnlyList<PoolParticipant>> GetParticipantsAsync(Guid poolId);
     Task UpdateParticipantAsync(PoolParticipant participant);
+    Task RemoveParticipantAsync(Guid poolId, Guid userId);
     Task UpdateAsync(Pool pool);
 }

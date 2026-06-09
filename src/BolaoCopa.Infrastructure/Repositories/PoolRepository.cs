@@ -24,7 +24,7 @@ public class PoolRepository : IPoolRepository
             from pp in _context.PoolParticipants
             join p in _context.Pools on pp.PoolId equals p.Id
             where pp.UserId == userId
-            select new { p.Id, p.Name, p.Description, p.IsPrivate, p.InviteCode }
+            select new { p.Id, p.Name, p.Description, p.IsPrivate, p.InviteCode, p.OwnerUserId }
         ).ToListAsync();
 
         if (pools.Count == 0) return Array.Empty<PoolDto>();
@@ -39,7 +39,7 @@ public class PoolRepository : IPoolRepository
         return pools
             .Select(p => new PoolDto(
                 p.Id, p.Name, p.Description, p.IsPrivate, p.InviteCode,
-                counts.GetValueOrDefault(p.Id, 0)))
+                counts.GetValueOrDefault(p.Id, 0), p.OwnerUserId))
             .ToList();
     }
 
@@ -83,6 +83,17 @@ public class PoolRepository : IPoolRepository
     {
         _context.PoolParticipants.Update(participant);
         await _context.SaveChangesAsync();
+    }
+
+    public async Task RemoveParticipantAsync(Guid poolId, Guid userId)
+    {
+        var participant = await _context.PoolParticipants
+            .FirstOrDefaultAsync(p => p.PoolId == poolId && p.UserId == userId);
+        if (participant is not null)
+        {
+            _context.PoolParticipants.Remove(participant);
+            await _context.SaveChangesAsync();
+        }
     }
 
     public async Task UpdateAsync(Pool pool)

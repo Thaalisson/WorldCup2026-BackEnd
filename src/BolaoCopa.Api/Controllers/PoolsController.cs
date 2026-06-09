@@ -16,12 +16,14 @@ public class PoolsController : ControllerBase
     private readonly IPoolRepository _pools;
     private readonly IFeedRepository _feed;
     private readonly IRankingSnapshotRepository _snapshots;
+    private readonly IPredictionRepository _predictions;
 
-    public PoolsController(IPoolRepository pools, IFeedRepository feed, IRankingSnapshotRepository snapshots)
+    public PoolsController(IPoolRepository pools, IFeedRepository feed, IRankingSnapshotRepository snapshots, IPredictionRepository predictions)
     {
         _pools = pools;
         _feed = feed;
         _snapshots = snapshots;
+        _predictions = predictions;
     }
 
     [HttpGet]
@@ -57,7 +59,7 @@ public class PoolsController : ControllerBase
             UserId = userId
         });
 
-        return Ok(new PoolDto(pool.Id, pool.Name, pool.Description, pool.IsPrivate, pool.InviteCode, 1));
+        return Ok(new PoolDto(pool.Id, pool.Name, pool.Description, pool.IsPrivate, pool.InviteCode, 1, pool.OwnerUserId));
     }
 
     [HttpPost("join")]
@@ -77,7 +79,46 @@ public class PoolsController : ControllerBase
             UserId = userId
         });
 
+        // Copy the user's existing predictions (latest per match) into the new pool
+        var allPredictions = await _predictions.GetByUserAsync(userId);
+        if (allPredictions.Count > 0)
+        {
+            var latestPerMatch = allPredictions
+                .GroupBy(p => p.MatchId)
+                .Select(g => g.OrderByDescending(p => p.UpdatedAt ?? p.CreatedAt).First())
+                .Select(p => new Prediction
+                {
+                    Id = Guid.NewGuid(),
+                    PoolId = pool.Id,
+                    UserId = userId,
+                    MatchId = p.MatchId,
+                    HomeScorePrediction = p.HomeScorePrediction,
+                    AwayScorePrediction = p.AwayScorePrediction
+                })
+                .ToList();
+
+            if (latestPerMatch.Count > 0)
+                await _predictions.BulkUpsertAsync(latestPerMatch, new List<Prediction>());
+        }
+
         return Ok(new { pool.Id, pool.Name, pool.InviteCode });
+    }
+
+    [HttpDelete("{id:guid}/leave")]
+    public async Task<IActionResult> Leave(Guid id)
+    {
+        var userId = GetUserId();
+        var pool = await _pools.GetByIdAsync(id);
+        if (pool is null) return NotFound("Bolão não encontrado.");
+
+        if (pool.OwnerUserId == userId)
+            return BadRequest("O dono do bolão não pode sair. Transfira a administração ou exclua o bolão.");
+
+        if (!await _pools.IsParticipantAsync(id, userId))
+            return NotFound("Você não é participante deste bolão.");
+
+        await _pools.RemoveParticipantAsync(id, userId);
+        return Ok(new { message = "Você saiu do bolão." });
     }
 
     [HttpGet("{id:guid}/ranking")]
