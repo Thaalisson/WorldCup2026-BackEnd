@@ -81,8 +81,54 @@ public class GroupPredictionsController : ControllerBase
             p.PointsEarned);
     }
 
+    [HttpPost("bulk")]
+    public async Task<IActionResult> BulkUpsert([FromBody] BulkGroupPredictionRequest request)
+    {
+        if (DateTime.UtcNow >= TournamentStart)
+            return BadRequest("Palpites de classificação bloqueados — torneio já iniciou.");
+
+        if (request.Picks.Count == 0)
+            return BadRequest("Nenhum palpite enviado.");
+
+        var userId = GetUserId();
+        if (!await _pools.IsParticipantAsync(request.PoolId, userId)) return Forbid();
+
+        var existing = await _repo.GetByUserAndPoolAsync(userId, request.PoolId);
+        var existingMap = existing.ToDictionary(x => x.GroupName);
+
+        int saved = 0;
+        foreach (var pick in request.Picks)
+        {
+            if (pick.FirstPlaceTeamId == pick.SecondPlaceTeamId) continue;
+
+            if (existingMap.TryGetValue(pick.GroupName, out var ex))
+            {
+                ex.FirstPlaceTeamId = pick.FirstPlaceTeamId;
+                ex.SecondPlaceTeamId = pick.SecondPlaceTeamId;
+                await _repo.UpdateAsync(ex);
+            }
+            else
+            {
+                await _repo.AddAsync(new GroupPrediction
+                {
+                    Id = Guid.NewGuid(),
+                    PoolId = request.PoolId,
+                    UserId = userId,
+                    GroupName = pick.GroupName,
+                    FirstPlaceTeamId = pick.FirstPlaceTeamId,
+                    SecondPlaceTeamId = pick.SecondPlaceTeamId
+                });
+            }
+            saved++;
+        }
+
+        return Ok(new { saved });
+    }
+
     private Guid GetUserId() =>
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 }
 
 public record UpsertGroupPredictionRequest(Guid PoolId, string GroupName, Guid FirstPlaceTeamId, Guid SecondPlaceTeamId);
+public record BulkGroupPredictionRequest(Guid PoolId, List<GroupPickItem> Picks);
+public record GroupPickItem(string GroupName, Guid FirstPlaceTeamId, Guid SecondPlaceTeamId);
