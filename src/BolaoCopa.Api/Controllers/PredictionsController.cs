@@ -140,6 +140,76 @@ public class PredictionsController : ControllerBase
         return Ok(new { saved, skipped = skipped.Count });
     }
 
+    [HttpPost("replicate")]
+    public async Task<IActionResult> ReplicateToAllPools([FromBody] ReplicatePredictionsRequest request)
+    {
+        var userId = GetUserId();
+        if (!await _pools.IsParticipantAsync(request.SourcePoolId, userId)) return Forbid();
+
+        var userPools = await _pools.GetByUserIdAsync(userId);
+        var targetPoolIds = userPools
+            .Select(p => p.Id)
+            .Where(id => id != request.SourcePoolId)
+            .ToList();
+
+        if (targetPoolIds.Count == 0)
+            return Ok(new { replicated = 0, pools = 0 });
+
+        var now = DateTime.UtcNow;
+        var lockCutoff = now.AddHours(2);
+
+        var sourcePredictions = await _predictionRepository.GetByUserAndPoolAsync(userId, request.SourcePoolId);
+        var matchIds = sourcePredictions.Select(p => p.MatchId).Distinct().ToList();
+        var matches = await _matchRepository.GetByIdsAsync(matchIds);
+        var matchMap = matches.ToDictionary(m => m.Id);
+
+        var replicable = sourcePredictions
+            .Where(p => matchMap.TryGetValue(p.MatchId, out var m) && m.KickoffAt > lockCutoff)
+            .ToList();
+
+        if (replicable.Count == 0)
+            return Ok(new { replicated = 0, pools = targetPoolIds.Count });
+
+        int totalReplicated = 0;
+        foreach (var targetPoolId in targetPoolIds)
+        {
+            var existing = await _predictionRepository.GetByUserAndPoolAsync(userId, targetPoolId);
+            var existingMap = existing.ToDictionary(p => p.MatchId);
+
+            var toAdd = new List<Prediction>();
+            var toUpdate = new List<Prediction>();
+
+            foreach (var src in replicable)
+            {
+                if (existingMap.TryGetValue(src.MatchId, out var ex))
+                {
+                    ex.HomeScorePrediction = src.HomeScorePrediction;
+                    ex.AwayScorePrediction = src.AwayScorePrediction;
+                    ex.UpdatedAt = now;
+                    toUpdate.Add(ex);
+                }
+                else
+                {
+                    toAdd.Add(new Prediction
+                    {
+                        Id = Guid.NewGuid(),
+                        PoolId = targetPoolId,
+                        UserId = userId,
+                        MatchId = src.MatchId,
+                        HomeScorePrediction = src.HomeScorePrediction,
+                        AwayScorePrediction = src.AwayScorePrediction,
+                    });
+                }
+            }
+
+            totalReplicated += await _predictionRepository.BulkUpsertAsync(toAdd, toUpdate);
+        }
+
+        return Ok(new { replicated = totalReplicated, pools = targetPoolIds.Count });
+    }
+
     private Guid GetUserId() =>
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 }
+
+public record ReplicatePredictionsRequest(Guid SourcePoolId);
