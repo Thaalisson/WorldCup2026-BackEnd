@@ -35,8 +35,8 @@ public class MatchSyncService : IMatchSyncService
             var existing = await _matches.GetByApiFixtureIdAsync(f.FixtureId);
             if (existing is not null) continue;
 
-            var homeTeam = await EnsureTeamAsync(f.HomeTeamId, f.HomeTeamName);
-            var awayTeam = await EnsureTeamAsync(f.AwayTeamId, f.AwayTeamName);
+            var homeTeam = await EnsureTeamAsync(f.HomeTeamId, f.HomeTeamName, f.HomeTeamCode);
+            var awayTeam = await EnsureTeamAsync(f.AwayTeamId, f.AwayTeamName, f.AwayTeamCode);
 
             var match = new DomainMatch
             {
@@ -83,7 +83,7 @@ public class MatchSyncService : IMatchSyncService
         }
     }
 
-    private async Task<Team> EnsureTeamAsync(int apiTeamId, string name)
+    private async Task<Team> EnsureTeamAsync(int apiTeamId, string name, string code = "")
     {
         var team = await _teams.GetByApiTeamIdAsync(apiTeamId);
         if (team is not null) return team;
@@ -92,7 +92,9 @@ public class MatchSyncService : IMatchSyncService
         {
             Id = Guid.NewGuid(),
             Name = name,
-            Code = name.Length >= 3 ? name[..3].ToUpperInvariant() : name.ToUpperInvariant(),
+            Code = !string.IsNullOrWhiteSpace(code)
+                ? code.ToUpperInvariant()
+                : name.Length >= 3 ? name[..3].ToUpperInvariant() : name.ToUpperInvariant(),
             ApiFootballTeamId = apiTeamId
         };
         await _teams.AddAsync(team);

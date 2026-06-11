@@ -10,5 +10,7 @@ public record ApiFixtureDto(
     int AwayTeamId,
     string AwayTeamName,
     int? HomeGoals,
-    int? AwayGoals
+    int? AwayGoals,
+    string HomeTeamCode = "",
+    string AwayTeamCode = ""
 );

@@ -85,11 +85,11 @@ builder.Services.AddHangfire(config => config
     .UsePostgreSqlStorage(c => c.UseNpgsqlConnection(connStr)));
 builder.Services.AddHangfireServer();
 
-// HttpClient para api-football.com
-builder.Services.AddHttpClient<IFootballApiClient, FootballApiClient>(client =>
+// HttpClient para football-data.org (plano gratuito cobre a Copa do Mundo — competição "WC")
+builder.Services.AddHttpClient<IFootballApiClient, FootballDataApiClient>(client =>
 {
-    client.BaseAddress = new Uri("https://v3.football.api-sports.io/");
-    client.DefaultRequestHeaders.Add("x-apisports-key", builder.Configuration["ApiFootball:ApiKey"]);
+    client.BaseAddress = new Uri("https://api.football-data.org/v4/");
+    client.DefaultRequestHeaders.Add("X-Auth-Token", builder.Configuration["FootballData:Token"]);
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
@@ -150,6 +150,65 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+
+// CLI de manutenção (não sobe o servidor web nem exige login):
+//   dotnet run -- reset-tournament   -> apaga jogos/seleções fictícios + palpites (mantém usuários/pools)
+//   dotnet run -- import-fixtures     -> importa os jogos REAIS da Copa via football-data.org
+//   dotnet run -- sync-results        -> grava placares finalizados e recalcula ranking
+if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sync-results"
+        or "db-stats" or "link-fixtures" or "link-fixtures-dry")
+{
+    await using var cliScope = app.Services.CreateAsyncScope();
+    var sp = cliScope.ServiceProvider;
+
+    switch (args[0])
+    {
+        case "link-fixtures":
+        case "link-fixtures-dry":
+            var linker = new BolaoCopa.Api.FixtureLinker(
+                sp.GetRequiredService<AppDbContext>(),
+                sp.GetRequiredService<IFootballApiClient>());
+            Console.WriteLine(await linker.RunAsync(apply: args[0] == "link-fixtures"));
+            break;
+
+        case "db-stats":
+            var ctx = sp.GetRequiredService<AppDbContext>();
+            Console.WriteLine($"[db-stats] Teams={await ctx.Teams.CountAsync()} " +
+                $"Matches={await ctx.Matches.CountAsync()} " +
+                $"Finished={await ctx.Matches.CountAsync(m => m.IsFinished)} " +
+                $"Predictions={await ctx.Predictions.CountAsync()} " +
+                $"Users={await ctx.Users.CountAsync()} " +
+                $"Pools={await ctx.Pools.CountAsync()}");
+            break;
+
+        case "reset-tournament":
+            var db = sp.GetRequiredService<AppDbContext>();
+            await db.Database.ExecuteSqlRawAsync(@"
+                DELETE FROM ""Predictions"";
+                DELETE FROM ""FeedEvents"";
+                DELETE FROM ""GroupPredictions"";
+                DELETE FROM ""ChampionPredictions"";
+                DELETE FROM ""Players"";
+                DELETE FROM ""RankingSnapshots"";
+                DELETE FROM ""Matches"";
+                DELETE FROM ""Teams"";
+            ");
+            Console.WriteLine("[reset-tournament] Chaveamento ficticio removido (usuarios e pools mantidos).");
+            break;
+
+        case "import-fixtures":
+            var count = await sp.GetRequiredService<IMatchSyncService>().ImportFixturesAsync();
+            Console.WriteLine($"[import-fixtures] {count} jogo(s) real(is) importado(s).");
+            break;
+
+        case "sync-results":
+            await sp.GetRequiredService<IMatchSyncService>().SyncResultsAsync();
+            Console.WriteLine("[sync-results] Placares sincronizados e ranking recalculado.");
+            break;
+    }
+
+    return;
+}
 
 if (app.Environment.IsDevelopment())
 {
