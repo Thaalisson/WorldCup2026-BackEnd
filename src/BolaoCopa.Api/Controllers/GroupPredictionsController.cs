@@ -37,7 +37,7 @@ public class GroupPredictionsController : ControllerBase
         return Ok(result);
     }
 
-    private static readonly DateTime TournamentStart = new(2026, 6, 11, 12, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime TournamentStart = new(2026, 6, 11, 18, 0, 0, DateTimeKind.Utc);
 
     [HttpPost]
     public async Task<IActionResult> Upsert([FromBody] UpsertGroupPredictionRequest request)

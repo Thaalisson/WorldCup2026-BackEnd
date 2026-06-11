@@ -57,7 +57,7 @@ public class PredictionsController : ControllerBase
 
         var match = await _matchRepository.GetByIdAsync(request.MatchId);
         if (match is null) return NotFound("Jogo não encontrado.");
-        if (match.KickoffAt.AddHours(-2) <= DateTime.UtcNow) return BadRequest("Palpite bloqueado — menos de 2h para o jogo.");
+        if (match.KickoffAt.AddHours(-1) <= DateTime.UtcNow) return BadRequest("Palpite bloqueado — menos de 1h para o jogo.");
 
         var existing = await _predictionRepository.GetByUserPoolAndMatchAsync(userId, request.PoolId, request.MatchId);
 
@@ -94,7 +94,7 @@ public class PredictionsController : ControllerBase
         if (!await _pools.IsParticipantAsync(request.PoolId, userId)) return Forbid();
 
         var now = DateTime.UtcNow;
-        var lockCutoff = now.AddHours(2);
+        var lockCutoff = now.AddHours(1);
 
         var matchIds = request.Predictions.Select(p => p.MatchId).Distinct().ToList();
         var matches = await _matchRepository.GetByIdsAsync(matchIds);
@@ -156,7 +156,7 @@ public class PredictionsController : ControllerBase
             return Ok(new { replicated = 0, pools = 0 });
 
         var now = DateTime.UtcNow;
-        var lockCutoff = now.AddHours(2);
+        var lockCutoff = now.AddHours(1);
 
         var sourcePredictions = await _predictionRepository.GetByUserAndPoolAsync(userId, request.SourcePoolId);
         var matchIds = sourcePredictions.Select(p => p.MatchId).Distinct().ToList();

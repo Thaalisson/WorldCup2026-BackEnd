@@ -36,7 +36,7 @@ public class ChampionPredictionsController : ControllerBase
         return Ok(dto);
     }
 
-    private static readonly DateTime TournamentStart = new(2026, 6, 11, 12, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime TournamentStart = new(2026, 6, 11, 18, 0, 0, DateTimeKind.Utc);
 
     [HttpPost]
     public async Task<IActionResult> Save([FromBody] SaveChampionPredictionRequest request)
