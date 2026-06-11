@@ -57,6 +57,7 @@ public class PredictionsController : ControllerBase
 
         var match = await _matchRepository.GetByIdAsync(request.MatchId);
         if (match is null) return NotFound("Jogo não encontrado.");
+        if (match.IsFinished) return BadRequest("Palpite bloqueado — jogo já encerrado.");
         if (match.KickoffAt.AddHours(-1) <= DateTime.UtcNow) return BadRequest("Palpite bloqueado — menos de 1h para o jogo.");
 
         var existing = await _predictionRepository.GetByUserPoolAndMatchAsync(userId, request.PoolId, request.MatchId);
@@ -109,7 +110,7 @@ public class PredictionsController : ControllerBase
 
         foreach (var item in request.Predictions)
         {
-            if (!matchMap.TryGetValue(item.MatchId, out var match) || match.KickoffAt <= lockCutoff)
+            if (!matchMap.TryGetValue(item.MatchId, out var match) || match.IsFinished || match.KickoffAt <= lockCutoff)
             {
                 skipped.Add(item.MatchId);
                 continue;

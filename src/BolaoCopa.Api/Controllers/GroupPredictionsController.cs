@@ -15,12 +15,14 @@ public class GroupPredictionsController : ControllerBase
     private readonly IGroupPredictionRepository _repo;
     private readonly ITeamRepository _teams;
     private readonly IPoolRepository _pools;
+    private readonly IMatchRepository _matches;
 
-    public GroupPredictionsController(IGroupPredictionRepository repo, ITeamRepository teams, IPoolRepository pools)
+    public GroupPredictionsController(IGroupPredictionRepository repo, ITeamRepository teams, IPoolRepository pools, IMatchRepository matches)
     {
         _repo = repo;
         _teams = teams;
         _pools = pools;
+        _matches = matches;
     }
 
     [HttpGet]
@@ -37,13 +39,18 @@ public class GroupPredictionsController : ControllerBase
         return Ok(result);
     }
 
-    private static readonly DateTime TournamentStart = new(2026, 6, 11, 18, 0, 0, DateTimeKind.Utc);
-
     [HttpPost]
     public async Task<IActionResult> Upsert([FromBody] UpsertGroupPredictionRequest request)
     {
-        if (DateTime.UtcNow >= TournamentStart)
-            return BadRequest("Palpites de classificação bloqueados — torneio já iniciou.");
+        var allMatches = await _matches.GetAllWithTeamsAsync();
+        var firstKickoff = allMatches
+            .Where(m => m.GroupName == request.GroupName)
+            .Select(m => m.KickoffAt)
+            .OrderBy(k => k)
+            .FirstOrDefault();
+
+        if (firstKickoff != default && firstKickoff.AddHours(-1) <= DateTime.UtcNow)
+            return BadRequest($"Palpites do Grupo {request.GroupName} bloqueados — jogo começa em menos de 1h.");
 
         var userId = GetUserId();
         if (!await _pools.IsParticipantAsync(request.PoolId, userId)) return Forbid();
@@ -84,20 +91,34 @@ public class GroupPredictionsController : ControllerBase
     [HttpPost("bulk")]
     public async Task<IActionResult> BulkUpsert([FromBody] BulkGroupPredictionRequest request)
     {
-        if (DateTime.UtcNow >= TournamentStart)
-            return BadRequest("Palpites de classificação bloqueados — torneio já iniciou.");
-
         if (request.Picks.Count == 0)
             return BadRequest("Nenhum palpite enviado.");
 
         var userId = GetUserId();
         if (!await _pools.IsParticipantAsync(request.PoolId, userId)) return Forbid();
 
+        var now = DateTime.UtcNow;
+        var lockCutoff = now.AddHours(1);
+
+        var allMatches = await _matches.GetAllWithTeamsAsync();
+        var groupFirstKickoff = allMatches
+            .Where(m => m.GroupName != null)
+            .GroupBy(m => m.GroupName!)
+            .ToDictionary(g => g.Key, g => g.Min(m => m.KickoffAt));
+
+        var unlockedPicks = request.Picks
+            .Where(p =>
+                !groupFirstKickoff.TryGetValue(p.GroupName, out var first) || first > lockCutoff)
+            .ToList();
+
+        if (unlockedPicks.Count == 0)
+            return BadRequest("Todos os grupos estão bloqueados.");
+
         var existing = await _repo.GetByUserAndPoolAsync(userId, request.PoolId);
         var existingMap = existing.ToDictionary(x => x.GroupName);
 
         int saved = 0;
-        foreach (var pick in request.Picks)
+        foreach (var pick in unlockedPicks)
         {
             if (pick.FirstPlaceTeamId == pick.SecondPlaceTeamId) continue;
 
