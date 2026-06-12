@@ -7,5 +7,6 @@ public record FeedEventDto(
     int EventType,
     string EventTypeName,
     int Points,
-    DateTime OccurredAt
+    DateTime OccurredAt,
+    string PredictionLabel = ""
 );

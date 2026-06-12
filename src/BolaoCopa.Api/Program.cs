@@ -156,7 +156,8 @@ var app = builder.Build();
 //   dotnet run -- import-fixtures     -> importa os jogos REAIS da Copa via football-data.org
 //   dotnet run -- sync-results        -> grava placares finalizados e recalcula ranking
 if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sync-results"
-        or "db-stats" or "link-fixtures" or "link-fixtures-dry")
+        or "db-stats" or "link-fixtures" or "link-fixtures-dry" or "match-predictions"
+        or "set-password")
 {
     await using var cliScope = app.Services.CreateAsyncScope();
     var sp = cliScope.ServiceProvider;
@@ -170,6 +171,66 @@ if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sy
                 sp.GetRequiredService<IFootballApiClient>());
             Console.WriteLine(await linker.RunAsync(apply: args[0] == "link-fixtures"));
             break;
+
+        case "set-password":
+        {
+            var ctx3 = sp.GetRequiredService<AppDbContext>();
+            var id = args.Length > 1 ? args[1] : "";
+            var newPwd = args.Length > 2 ? args[2] : "Bolao@2026";
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                Console.WriteLine("Uso: set-password <email-ou-nome> [nova-senha]");
+                break;
+            }
+
+            var found = await ctx3.Users
+                .Where(u => u.Email == id || u.Name == id)
+                .ToListAsync();
+
+            if (found.Count == 0) { Console.WriteLine($"Nenhum usuário com email/nome '{id}'."); break; }
+            if (found.Count > 1)
+            {
+                Console.WriteLine($"Mais de um usuário encontrado para '{id}' — use o EMAIL exato:");
+                foreach (var u in found) Console.WriteLine($"  {u.Name} <{u.Email}>");
+                break;
+            }
+
+            var user = found[0];
+            user.PasswordHash = BolaoCopa.Infrastructure.Helpers.PasswordHasher.Hash(newPwd);
+            await ctx3.SaveChangesAsync();
+            Console.WriteLine($"Senha redefinida para {user.Name} <{user.Email}>. Nova senha: {newPwd}");
+            break;
+        }
+
+        case "match-predictions":
+        {
+            var ctx2 = sp.GetRequiredService<AppDbContext>();
+            var code = args.Length > 1 ? args[1] : "1"; // FifaMatchCode (1 = México x África do Sul)
+            var match = await ctx2.Matches.FirstOrDefaultAsync(m => m.FifaMatchCode == code);
+            if (match is null) { Console.WriteLine($"Jogo de código {code} não encontrado."); break; }
+
+            var home = await ctx2.Teams.FirstAsync(t => t.Id == match.HomeTeamId);
+            var away = await ctx2.Teams.FirstAsync(t => t.Id == match.AwayTeamId);
+            var placar = match.IsFinished ? $"{match.HomeScore}-{match.AwayScore}" : "(não finalizado)";
+            Console.WriteLine($"=== {home.Code} {home.Name} x {away.Name} {away.Code} | resultado: {placar} ===");
+
+            var rows = await (from p in ctx2.Predictions
+                              join u in ctx2.Users on p.UserId equals u.Id
+                              join pool in ctx2.Pools on p.PoolId equals pool.Id
+                              where p.MatchId == match.Id
+                              orderby pool.Name, u.Name
+                              select new { Pool = pool.Name, User = u.Name,
+                                           H = p.HomeScorePrediction, A = p.AwayScorePrediction,
+                                           Pts = p.PointsEarned }).ToListAsync();
+
+            Console.WriteLine($"Total de palpites: {rows.Count}");
+            foreach (var r in rows)
+            {
+                var acertou = match.IsFinished && r.H == match.HomeScore && r.A == match.AwayScore ? " ✔ PLACAR EXATO" : "";
+                Console.WriteLine($"  [{r.Pool}] {r.User}: {r.H}-{r.A} | pts={r.Pts}{acertou}");
+            }
+            break;
+        }
 
         case "db-stats":
             var ctx = sp.GetRequiredService<AppDbContext>();
