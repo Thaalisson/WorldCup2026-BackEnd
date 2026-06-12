@@ -81,10 +81,14 @@ public class RankingService : IRankingService
                 var user = await _users.GetByIdAsync(prediction.UserId);
                 if (user is not null)
                 {
-                    var exactPts = config?.PointsExactScore ?? 10;
-                    var eventType = newPoints == exactPts  ? (int)FeedEventType.ExactScore
-                                  : newPoints > 0          ? (int)FeedEventType.CorrectResult
-                                  :                          (int)FeedEventType.ZeroPoints;
+                    var isExact = prediction.HomeScorePrediction == match.HomeScore
+                               && prediction.AwayScorePrediction == match.AwayScore;
+                    var predResult = prediction.HomeScorePrediction.CompareTo(prediction.AwayScorePrediction);
+                    var realResult = (match.HomeScore ?? 0).CompareTo(match.AwayScore ?? 0);
+                    var eventType = isExact                   ? (int)FeedEventType.ExactScore
+                                  : predResult == realResult  ? (int)FeedEventType.CorrectResult
+                                  : newPoints > 0             ? (int)FeedEventType.Partial
+                                  :                             (int)FeedEventType.ZeroPoints;
 
                     await _feed.AddAsync(new FeedEvent
                     {

@@ -17,13 +17,15 @@ public class PoolsController : ControllerBase
     private readonly IFeedRepository _feed;
     private readonly IRankingSnapshotRepository _snapshots;
     private readonly IPredictionRepository _predictions;
+    private readonly IMatchRepository _matches;
 
-    public PoolsController(IPoolRepository pools, IFeedRepository feed, IRankingSnapshotRepository snapshots, IPredictionRepository predictions)
+    public PoolsController(IPoolRepository pools, IFeedRepository feed, IRankingSnapshotRepository snapshots, IPredictionRepository predictions, IMatchRepository matches)
     {
         _pools = pools;
         _feed = feed;
         _snapshots = snapshots;
         _predictions = predictions;
+        _matches = matches;
     }
 
     [HttpGet]
@@ -135,24 +137,30 @@ public class PoolsController : ControllerBase
         if (!await _pools.IsParticipantAsync(id, GetUserId())) return Forbid();
         var events = await _feed.GetByPoolIdAsync(id, 30);
 
-        // Carrega os palpites dos jogos do feed (1 query por jogo) para mostrar
-        // "palpite vs resultado" — assim ninguém confunde o placar do jogo com o seu palpite.
+        // Carrega palpites e jogos do feed para mostrar "palpite vs resultado" e
+        // reclassificar o selo na leitura (corrige eventos antigos rotulados errado).
+        var matchIds = events.Select(e => e.MatchId).Distinct().ToList();
         var predByUserMatch = new Dictionary<(Guid UserId, Guid MatchId), Prediction>();
-        foreach (var matchId in events.Select(e => e.MatchId).Distinct())
+        foreach (var matchId in matchIds)
             foreach (var p in await _predictions.GetByMatchAndPoolAsync(matchId, id))
                 predByUserMatch[(p.UserId, matchId)] = p;
+        var matchById = (await _matches.GetByIdsAsync(matchIds)).ToDictionary(m => m.Id);
 
         var result = events.Select(e =>
         {
-            var predLabel = predByUserMatch.TryGetValue((e.UserId, e.MatchId), out var pr)
-                ? $"{pr.HomeScorePrediction}×{pr.AwayScorePrediction}"
-                : "";
+            predByUserMatch.TryGetValue((e.UserId, e.MatchId), out var pr);
+            var predLabel = pr is null ? "" : $"{pr.HomeScorePrediction}×{pr.AwayScorePrediction}";
+
+            var eventType = e.EventType;
+            if (pr is not null && matchById.TryGetValue(e.MatchId, out var m))
+                eventType = ClassifyFeedEvent(pr, m, e.Points);
+
             return new FeedEventDto(
                 e.Id,
                 e.UserName,
                 e.MatchLabel,
-                e.EventType,
-                EventTypeName(e.EventType),
+                eventType,
+                EventTypeName(eventType),
                 e.Points,
                 e.OccurredAt,
                 predLabel);
@@ -218,8 +226,24 @@ public class PoolsController : ControllerBase
         1 => "Placar Exato",
         2 => "Resultado Correto",
         3 => "Sem Pontos",
+        4 => "Parcial",
         _ => "?"
     };
+
+    // Reclassifica o evento comparando palpite x resultado real (independe do que foi salvo):
+    // exato → 1; acertou o vencedor/empate → 2; pontuou sem acertar o vencedor → 4 (parcial); zero → 3.
+    private static int ClassifyFeedEvent(Prediction p, Match m, int points)
+    {
+        if (!m.IsFinished || m.HomeScore is null || m.AwayScore is null) return 3;
+        if (p.HomeScorePrediction == m.HomeScore && p.AwayScorePrediction == m.AwayScore)
+            return (int)FeedEventType.ExactScore;
+
+        var predResult = p.HomeScorePrediction.CompareTo(p.AwayScorePrediction);
+        var realResult = m.HomeScore.Value.CompareTo(m.AwayScore.Value);
+        if (predResult == realResult) return (int)FeedEventType.CorrectResult;
+
+        return points > 0 ? (int)FeedEventType.Partial : (int)FeedEventType.ZeroPoints;
+    }
 
     private Guid GetUserId() =>
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);

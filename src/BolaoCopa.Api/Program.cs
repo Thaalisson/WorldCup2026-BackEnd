@@ -157,13 +157,20 @@ var app = builder.Build();
 //   dotnet run -- sync-results        -> grava placares finalizados e recalcula ranking
 if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sync-results"
         or "db-stats" or "link-fixtures" or "link-fixtures-dry" or "match-predictions"
-        or "set-password")
+        or "set-password" or "validate-scoring")
 {
     await using var cliScope = app.Services.CreateAsyncScope();
     var sp = cliScope.ServiceProvider;
 
     switch (args[0])
     {
+        case "validate-scoring":
+            var validator = new BolaoCopa.Api.ScoringValidator(
+                sp.GetRequiredService<AppDbContext>(),
+                sp.GetRequiredService<IScoringService>());
+            Console.WriteLine(await validator.RunAsync(args.Length > 1 ? args[1] : null));
+            break;
+
         case "link-fixtures":
         case "link-fixtures-dry":
             var linker = new BolaoCopa.Api.FixtureLinker(
