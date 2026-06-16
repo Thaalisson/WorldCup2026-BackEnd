@@ -153,4 +153,72 @@ public class ScoringValidator
         sb.AppendLine("\n(Prévia — nada foi salvo. Para aplicar de verdade: trocar a fórmula + recalcular os bolões.)");
         return sb.ToString();
     }
+
+    /// <summary>
+    /// Relatório de transparência (somente leitura): por jogador, ranking + de onde
+    /// veio cada ponto (palpite × resultado de cada jogo). Pronto pra compartilhar.
+    /// </summary>
+    public async Task<string> ReportAsync(string? poolFilter)
+    {
+        var teams = await _db.Teams.ToDictionaryAsync(t => t.Id);
+        var finished = (await _db.Matches.Where(m => m.IsFinished).ToListAsync())
+            .OrderBy(m => m.KickoffAt).ToList();
+        var finishedById = finished.ToDictionary(m => m.Id);
+
+        string Res(Domain.Entities.Match m) => $"{teams[m.HomeTeamId].Code} {m.HomeScore}×{m.AwayScore} {teams[m.AwayTeamId].Code}";
+
+        var pools = await _db.Pools
+            .Where(p => poolFilter == null || p.Name.Contains(poolFilter) || p.InviteCode.Contains(poolFilter))
+            .OrderBy(p => p.Name).ToListAsync();
+
+        var sb = new StringBuilder();
+        foreach (var pool in pools)
+        {
+            var parts = await (from pp in _db.PoolParticipants
+                               join u in _db.Users on pp.UserId equals u.Id
+                               where pp.PoolId == pool.Id
+                               select new { pp.UserId, u.Name, pp.TotalPoints }).ToListAsync();
+            if (parts.Count == 0 || parts.All(p => p.TotalPoints == 0)) continue;
+
+            sb.AppendLine($"🏆 {pool.Name} — RELATÓRIO DE PONTOS");
+            sb.AppendLine($"Regra: placar exato = {pool.PointsExactScore} · acertou vencedor/empate = {pool.PointsCorrectResult} · errou = 0");
+            sb.AppendLine($"Jogos contabilizados: {finished.Count}");
+            sb.AppendLine();
+
+            var ordered = parts.OrderByDescending(p => p.TotalPoints).ToList();
+            sb.AppendLine("CLASSIFICAÇÃO");
+            for (var i = 0; i < ordered.Count; i++)
+                sb.AppendLine($"  {i + 1}º {ordered[i].Name} — {ordered[i].TotalPoints} pts");
+            sb.AppendLine();
+
+            sb.AppendLine("DETALHE POR JOGADOR");
+            foreach (var p in ordered)
+            {
+                var preds = await _db.Predictions
+                    .Where(x => x.PoolId == pool.Id && x.UserId == p.UserId && finishedById.Keys.Contains(x.MatchId))
+                    .ToListAsync();
+                var byMatch = preds.ToDictionary(x => x.MatchId);
+
+                int exatos = 0, venc = 0, erros = 0, semPalpite = 0;
+                var linhas = new List<string>();
+                foreach (var m in finished)
+                {
+                    if (!byMatch.TryGetValue(m.Id, out var pr)) { semPalpite++; continue; }
+                    string tag;
+                    if (pr.PointsEarned >= pool.PointsExactScore) { tag = "🎯"; exatos++; }
+                    else if (pr.PointsEarned > 0) { tag = "✓"; venc++; }
+                    else { tag = "✗"; erros++; }
+                    linhas.Add($"   {tag} {Res(m)} · seu palpite {pr.HomeScorePrediction}×{pr.AwayScorePrediction} · +{pr.PointsEarned}");
+                }
+
+                sb.AppendLine($"▸ {p.Name} — {p.TotalPoints} pts  ({exatos} exatos, {venc} no vencedor, {erros} erros" +
+                              (semPalpite > 0 ? $", {semPalpite} sem palpite" : "") + ")");
+                foreach (var l in linhas) sb.AppendLine(l);
+                sb.AppendLine();
+            }
+            sb.AppendLine(new string('─', 40));
+        }
+
+        return sb.ToString();
+    }
 }

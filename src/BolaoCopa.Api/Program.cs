@@ -158,7 +158,7 @@ var app = builder.Build();
 if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sync-results"
         or "db-stats" or "link-fixtures" or "link-fixtures-dry" or "match-predictions"
         or "set-password" or "validate-scoring" or "set-prediction" or "preview-simple"
-        or "recalc-all")
+        or "recalc-all" or "report")
 {
     await using var cliScope = app.Services.CreateAsyncScope();
     var sp = cliScope.ServiceProvider;
@@ -236,6 +236,16 @@ if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sy
                 sp.GetRequiredService<AppDbContext>(),
                 sp.GetRequiredService<IScoringService>());
             Console.WriteLine(await previewer.PreviewSimpleAsync(args.Length > 1 ? args[1] : null));
+            break;
+
+        case "report":
+            var reporter = new BolaoCopa.Api.ScoringValidator(
+                sp.GetRequiredService<AppDbContext>(),
+                sp.GetRequiredService<IScoringService>());
+            var report = await reporter.ReportAsync(args.Length > 1 ? args[1] : null);
+            Console.WriteLine(report);
+            await System.IO.File.WriteAllTextAsync("relatorio_pontos.txt", report);
+            Console.WriteLine(">> Salvo em relatorio_pontos.txt");
             break;
 
         case "link-fixtures":

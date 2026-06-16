@@ -171,6 +171,53 @@ public class PoolsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("{id:guid}/report")]
+    public async Task<IActionResult> GetReport(Guid id)
+    {
+        if (!await _pools.IsParticipantAsync(id, GetUserId())) return Forbid();
+        var pool = await _pools.GetByIdAsync(id);
+        if (pool is null) return NotFound();
+
+        var ranking = await _pools.GetRankingAsync(id);
+        var finished = (await _matches.GetAllWithTeamsAsync())
+            .Where(m => m.IsFinished && m.HomeScore is not null && m.AwayScore is not null)
+            .OrderBy(m => m.KickoffAt)
+            .ToList();
+
+        // Palpites do bolão por (usuário, jogo)
+        var predByUserMatch = new Dictionary<(Guid UserId, Guid MatchId), Prediction>();
+        foreach (var m in finished)
+            foreach (var pr in await _predictions.GetByMatchAndPoolAsync(m.Id, id))
+                predByUserMatch[(pr.UserId, m.Id)] = pr;
+
+        var players = ranking.Select(r =>
+        {
+            int exatos = 0, venc = 0, erros = 0, sem = 0;
+            var games = finished.Select(m =>
+            {
+                var label = $"{m.HomeTeam.Code} {m.HomeScore}×{m.AwayScore} {m.AwayTeam.Code}";
+                if (!predByUserMatch.TryGetValue((r.UserId, m.Id), out var pr))
+                {
+                    sem++;
+                    return new PoolReportGameDto(label, "", 0, "sem_palpite");
+                }
+
+                var exato = pr.HomeScorePrediction == m.HomeScore && pr.AwayScorePrediction == m.AwayScore;
+                string outcome;
+                if (exato) { outcome = "exato"; exatos++; }
+                else if (pr.PointsEarned > 0) { outcome = "vencedor"; venc++; }
+                else { outcome = "errou"; erros++; }
+
+                return new PoolReportGameDto(label,
+                    $"{pr.HomeScorePrediction}×{pr.AwayScorePrediction}", pr.PointsEarned, outcome);
+            }).ToList();
+
+            return new PoolReportPlayerDto(r.UserName, r.Position, r.TotalPoints, exatos, venc, erros, sem, games);
+        }).ToList();
+
+        return Ok(new PoolReportDto(pool.Name, pool.PointsExactScore, pool.PointsCorrectResult, finished.Count, players));
+    }
+
     [HttpGet("{id:guid}/ranking-evolution")]
     public async Task<IActionResult> GetRankingEvolution(Guid id)
     {
