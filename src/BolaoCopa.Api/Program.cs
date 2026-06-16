@@ -157,18 +157,85 @@ var app = builder.Build();
 //   dotnet run -- sync-results        -> grava placares finalizados e recalcula ranking
 if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sync-results"
         or "db-stats" or "link-fixtures" or "link-fixtures-dry" or "match-predictions"
-        or "set-password" or "validate-scoring")
+        or "set-password" or "validate-scoring" or "set-prediction" or "preview-simple"
+        or "recalc-all")
 {
     await using var cliScope = app.Services.CreateAsyncScope();
     var sp = cliScope.ServiceProvider;
 
     switch (args[0])
     {
+        case "set-prediction":
+        {
+            if (args.Length < 7)
+            {
+                Console.WriteLine("Uso: set-prediction <email-ou-nome> <bolao> <CASA> <FORA> <golsCasa> <golsFora>");
+                Console.WriteLine("Ex.: set-prediction \"Marcos Mendes\" FFC_BOLAO AUS TUR 2 0");
+                break;
+            }
+            var ctxp = sp.GetRequiredService<AppDbContext>();
+            var users = await ctxp.Users.Where(u => u.Email == args[1] || u.Name == args[1]).ToListAsync();
+            if (users.Count != 1) { Console.WriteLine($"Usuário '{args[1]}': {users.Count} encontrado(s) — use o email exato."); break; }
+            var pool = await ctxp.Pools.FirstOrDefaultAsync(p => p.Name == args[2] || p.InviteCode == args[2]);
+            if (pool is null) { Console.WriteLine($"Bolão '{args[2]}' não encontrado."); break; }
+            var home = await ctxp.Teams.FirstOrDefaultAsync(t => t.Code == args[3]);
+            var away = await ctxp.Teams.FirstOrDefaultAsync(t => t.Code == args[4]);
+            if (home is null || away is null) { Console.WriteLine("Código de seleção inválido."); break; }
+            var match = await ctxp.Matches.FirstOrDefaultAsync(m => m.HomeTeamId == home.Id && m.AwayTeamId == away.Id);
+            if (match is null) { Console.WriteLine($"Jogo {args[3]}×{args[4]} não encontrado."); break; }
+            var hs = int.Parse(args[5]); var asc = int.Parse(args[6]);
+
+            var pred = await ctxp.Predictions.FirstOrDefaultAsync(p =>
+                p.PoolId == pool.Id && p.UserId == users[0].Id && p.MatchId == match.Id);
+            var novo = pred is null;
+            if (pred is null)
+            {
+                pred = new BolaoCopa.Domain.Entities.Prediction
+                {
+                    Id = Guid.NewGuid(), PoolId = pool.Id, UserId = users[0].Id, MatchId = match.Id,
+                    HomeScorePrediction = hs, AwayScorePrediction = asc
+                };
+                await ctxp.Predictions.AddAsync(pred);
+            }
+            else { pred.HomeScorePrediction = hs; pred.AwayScorePrediction = asc; pred.UpdatedAt = DateTime.UtcNow; }
+            await ctxp.SaveChangesAsync();
+
+            // Se o jogo já acabou, reprocessa a pontuação (idempotente: só o palpite alterado muda).
+            if (match.IsFinished)
+                await sp.GetRequiredService<IRankingService>().RecalculateForMatchAsync(match);
+
+            var pts = (await ctxp.Predictions.AsNoTracking().FirstAsync(p => p.Id == pred.Id)).PointsEarned;
+            Console.WriteLine($"Palpite {(novo ? "criado" : "atualizado")}: {users[0].Name} | {pool.Name} | " +
+                $"{args[3]} {hs}×{asc} {args[4]} | jogo finalizado={match.IsFinished} | pontos deste jogo={pts}");
+            break;
+        }
+
         case "validate-scoring":
             var validator = new BolaoCopa.Api.ScoringValidator(
                 sp.GetRequiredService<AppDbContext>(),
                 sp.GetRequiredService<IScoringService>());
             Console.WriteLine(await validator.RunAsync(args.Length > 1 ? args[1] : null));
+            break;
+
+        case "recalc-all":
+        {
+            var ctxr = sp.GetRequiredService<AppDbContext>();
+            var ranking = sp.GetRequiredService<IRankingService>();
+            var poolIds = await ctxr.Pools.Select(p => new { p.Id, p.Name }).ToListAsync();
+            foreach (var pl in poolIds)
+            {
+                await ranking.RecalculateForPoolAsync(pl.Id);
+                Console.WriteLine($"[recalc-all] {pl.Name} recalculado.");
+            }
+            Console.WriteLine($"[recalc-all] Concluído: {poolIds.Count} bolão(ões).");
+            break;
+        }
+
+        case "preview-simple":
+            var previewer = new BolaoCopa.Api.ScoringValidator(
+                sp.GetRequiredService<AppDbContext>(),
+                sp.GetRequiredService<IScoringService>());
+            Console.WriteLine(await previewer.PreviewSimpleAsync(args.Length > 1 ? args[1] : null));
             break;
 
         case "link-fixtures":

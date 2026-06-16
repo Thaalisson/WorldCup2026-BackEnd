@@ -19,24 +19,15 @@ public class ScoringService : IScoringService
         var realHome = match.HomeScore.Value;
         var realAway = match.AwayScore.Value;
 
+        // Regra simples, igual à tela de configuração: placar exato OU acertou o
+        // vencedor/empate. Sem bônus de saldo/gols (que não apareciam na config).
         if (predictedHome == realHome && predictedAway == realAway)
             return exactPts;
 
-        var points = 0;
-
         if (GetResult(predictedHome, predictedAway) == GetResult(realHome, realAway))
-            points += correctPts;
+            return correctPts;
 
-        if (predictedHome - predictedAway == realHome - realAway)
-            points += 3;
-
-        if (predictedHome == realHome)
-            points += 2;
-
-        if (predictedAway == realAway)
-            points += 2;
-
-        return points;
+        return 0;
     }
 
     private static string GetResult(int home, int away)

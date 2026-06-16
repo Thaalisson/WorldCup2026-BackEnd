@@ -151,9 +151,12 @@ public class PoolsController : ControllerBase
             predByUserMatch.TryGetValue((e.UserId, e.MatchId), out var pr);
             var predLabel = pr is null ? "" : $"{pr.HomeScorePrediction}×{pr.AwayScorePrediction}";
 
+            // Usa os pontos atuais do palpite (autoritativos, já recalculados) em vez do
+            // valor congelado no evento — assim o feed nunca mostra pontuação desatualizada.
+            var points = pr?.PointsEarned ?? e.Points;
             var eventType = e.EventType;
             if (pr is not null && matchById.TryGetValue(e.MatchId, out var m))
-                eventType = ClassifyFeedEvent(pr, m, e.Points);
+                eventType = ClassifyFeedEvent(pr, m, points);
 
             return new FeedEventDto(
                 e.Id,
@@ -161,7 +164,7 @@ public class PoolsController : ControllerBase
                 e.MatchLabel,
                 eventType,
                 EventTypeName(eventType),
-                e.Points,
+                points,
                 e.OccurredAt,
                 predLabel);
         });

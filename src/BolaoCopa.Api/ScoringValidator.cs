@@ -100,4 +100,57 @@ public class ScoringValidator
         sb.AppendLine($"Palpites rotulados 'SÓ O VENCEDOR' sem acertar o vencedor: {mislabeled}");
         return sb.ToString();
     }
+
+    /// <summary>
+    /// Prévia (NÃO salva): recalcula os totais usando SÓ a regra simples — placar exato
+    /// ou acertou o vencedor/empate — sem os bônus de saldo/gols. Mostra atual × novo.
+    /// </summary>
+    public async Task<string> PreviewSimpleAsync(string? poolFilter)
+    {
+        var sb = new StringBuilder();
+        var finished = await _db.Matches.Where(m => m.IsFinished).ToListAsync();
+        var finishedById = finished.ToDictionary(m => m.Id);
+
+        var pools = await _db.Pools
+            .Where(p => poolFilter == null || p.Name.Contains(poolFilter) || p.InviteCode.Contains(poolFilter))
+            .OrderBy(p => p.Name).ToListAsync();
+
+        foreach (var pool in pools)
+        {
+            int exato = pool.PointsExactScore, vencedor = pool.PointsCorrectResult;
+
+            var parts = await (from pp in _db.PoolParticipants
+                               join u in _db.Users on pp.UserId equals u.Id
+                               where pp.PoolId == pool.Id
+                               select new { pp.UserId, u.Name, Atual = pp.TotalPoints }).ToListAsync();
+
+            var linhas = new List<(string Name, int Atual, int Novo)>();
+            foreach (var p in parts)
+            {
+                var preds = await _db.Predictions
+                    .Where(x => x.PoolId == pool.Id && x.UserId == p.UserId && finishedById.Keys.Contains(x.MatchId))
+                    .ToListAsync();
+
+                int novo = 0;
+                foreach (var pred in preds)
+                {
+                    var m = finishedById[pred.MatchId];
+                    if (pred.HomeScorePrediction == m.HomeScore && pred.AwayScorePrediction == m.AwayScore)
+                        novo += exato;
+                    else if (pred.HomeScorePrediction.CompareTo(pred.AwayScorePrediction)
+                          == (m.HomeScore ?? 0).CompareTo(m.AwayScore ?? 0))
+                        novo += vencedor;
+                }
+                linhas.Add((p.Name, p.Atual, novo));
+            }
+
+            if (linhas.Count == 0) continue;
+            sb.AppendLine($"\n### {pool.Name}  (exato={exato}, vencedor={vencedor})  — ATUAL → NOVO (simples)");
+            foreach (var l in linhas.OrderByDescending(x => x.Novo).ThenByDescending(x => x.Atual))
+                sb.AppendLine($"  {l.Name,-28} {l.Atual,4} → {l.Novo,4}   ({(l.Novo - l.Atual >= 0 ? "+" : "")}{l.Novo - l.Atual})");
+        }
+
+        sb.AppendLine("\n(Prévia — nada foi salvo. Para aplicar de verdade: trocar a fórmula + recalcular os bolões.)");
+        return sb.ToString();
+    }
 }
