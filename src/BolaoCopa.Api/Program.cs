@@ -158,7 +158,7 @@ var app = builder.Build();
 if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sync-results"
         or "db-stats" or "link-fixtures" or "link-fixtures-dry" or "match-predictions"
         or "set-password" or "validate-scoring" or "set-prediction" or "preview-simple"
-        or "recalc-all" or "report")
+        or "recalc-all" or "report" or "setup-audit" or "audit-log")
 {
     await using var cliScope = app.Services.CreateAsyncScope();
     var sp = cliScope.ServiceProvider;
@@ -237,6 +237,76 @@ if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sy
                 sp.GetRequiredService<IScoringService>());
             Console.WriteLine(await previewer.PreviewSimpleAsync(args.Length > 1 ? args[1] : null));
             break;
+
+        case "setup-audit":
+        {
+            const string auditDdl = """
+                CREATE TABLE IF NOT EXISTS prediction_audit (
+                  id bigserial PRIMARY KEY, prediction_id uuid, pool_id uuid, user_id uuid, match_id uuid,
+                  operation text, old_home int, old_away int, new_home int, new_away int,
+                  old_points int, new_points int, db_user text, changed_at timestamptz NOT NULL DEFAULT now());
+
+                CREATE OR REPLACE FUNCTION fn_prediction_audit() RETURNS trigger AS $$
+                BEGIN
+                  IF (TG_OP = 'DELETE') THEN
+                    INSERT INTO prediction_audit(prediction_id,pool_id,user_id,match_id,operation,old_home,old_away,new_home,new_away,old_points,new_points,db_user)
+                    VALUES (OLD."Id",OLD."PoolId",OLD."UserId",OLD."MatchId",'DELETE',OLD."HomeScorePrediction",OLD."AwayScorePrediction",NULL,NULL,OLD."PointsEarned",NULL,current_user);
+                    RETURN OLD;
+                  ELSIF (TG_OP = 'UPDATE') THEN
+                    IF (OLD."HomeScorePrediction" IS DISTINCT FROM NEW."HomeScorePrediction" OR OLD."AwayScorePrediction" IS DISTINCT FROM NEW."AwayScorePrediction") THEN
+                      INSERT INTO prediction_audit(prediction_id,pool_id,user_id,match_id,operation,old_home,old_away,new_home,new_away,old_points,new_points,db_user)
+                      VALUES (NEW."Id",NEW."PoolId",NEW."UserId",NEW."MatchId",'UPDATE',OLD."HomeScorePrediction",OLD."AwayScorePrediction",NEW."HomeScorePrediction",NEW."AwayScorePrediction",OLD."PointsEarned",NEW."PointsEarned",current_user);
+                    END IF;
+                    RETURN NEW;
+                  ELSIF (TG_OP = 'INSERT') THEN
+                    INSERT INTO prediction_audit(prediction_id,pool_id,user_id,match_id,operation,old_home,old_away,new_home,new_away,old_points,new_points,db_user)
+                    VALUES (NEW."Id",NEW."PoolId",NEW."UserId",NEW."MatchId",'INSERT',NULL,NULL,NEW."HomeScorePrediction",NEW."AwayScorePrediction",NULL,NEW."PointsEarned",current_user);
+                    RETURN NEW;
+                  END IF;
+                  RETURN NULL;
+                END;
+                $$ LANGUAGE plpgsql;
+
+                DROP TRIGGER IF EXISTS trg_prediction_audit ON "Predictions";
+                CREATE TRIGGER trg_prediction_audit AFTER INSERT OR UPDATE OR DELETE ON "Predictions"
+                FOR EACH ROW EXECUTE FUNCTION fn_prediction_audit();
+                """;
+            await sp.GetRequiredService<AppDbContext>().Database.ExecuteSqlRawAsync(auditDdl);
+            Console.WriteLine("[setup-audit] Tabela prediction_audit + trigger criados (idempotente).");
+            break;
+        }
+
+        case "audit-log":
+        {
+            var ctxa = sp.GetRequiredService<AppDbContext>();
+            var n = args.Length > 1 && int.TryParse(args[1], out var x) ? x : 30;
+            var rows = await ctxa.Database.SqlQueryRaw<AuditRow>(
+                "SELECT id \"Id\", prediction_id \"PredictionId\", pool_id \"PoolId\", user_id \"UserId\", " +
+                "match_id \"MatchId\", operation \"Operation\", old_home \"OldHome\", old_away \"OldAway\", " +
+                "new_home \"NewHome\", new_away \"NewAway\", db_user \"DbUser\", changed_at \"ChangedAt\" " +
+                "FROM prediction_audit ORDER BY changed_at DESC LIMIT " + n).ToListAsync();
+
+            if (rows.Count == 0) { Console.WriteLine("[audit-log] Nenhum registro ainda (alterações futuras serão gravadas)."); break; }
+
+            var users = await ctxa.Users.ToDictionaryAsync(u => u.Id, u => u.Name);
+            var pools = await ctxa.Pools.ToDictionaryAsync(p => p.Id, p => p.Name);
+            var teams = await ctxa.Teams.ToDictionaryAsync(t => t.Id);
+            var matches = await ctxa.Matches.ToDictionaryAsync(m => m.Id);
+            Console.WriteLine($"[audit-log] últimas {rows.Count} alterações de palpite:");
+            foreach (var r in rows)
+            {
+                var who = r.UserId is Guid uid && users.TryGetValue(uid, out var un) ? un : "?";
+                var pool = r.PoolId is Guid pid && pools.TryGetValue(pid, out var pn) ? pn : "?";
+                var mt = "?";
+                if (r.MatchId is Guid mid && matches.TryGetValue(mid, out var m)
+                    && teams.TryGetValue(m.HomeTeamId, out var ht) && teams.TryGetValue(m.AwayTeamId, out var at))
+                    mt = $"{ht.Code}×{at.Code}";
+                var oldv = r.OldHome.HasValue ? $"{r.OldHome}×{r.OldAway}" : "—";
+                var newv = r.NewHome.HasValue ? $"{r.NewHome}×{r.NewAway}" : "—";
+                Console.WriteLine($"  {r.ChangedAt:dd/MM HH:mm} | {r.Operation,-6} | {pool} | {who} | {mt} | {oldv} → {newv} | por {r.DbUser}");
+            }
+            break;
+        }
 
         case "report":
             var reporter = new BolaoCopa.Api.ScoringValidator(
@@ -412,3 +482,9 @@ RecurringJob.AddOrUpdate<ResultSyncJob>(
     new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
 
 app.Run();
+
+// Projeção para o comando CLI audit-log (lê a tabela prediction_audit).
+record AuditRow(
+    long Id, Guid? PredictionId, Guid? PoolId, Guid? UserId, Guid? MatchId,
+    string Operation, int? OldHome, int? OldAway, int? NewHome, int? NewAway,
+    string DbUser, DateTime ChangedAt);
