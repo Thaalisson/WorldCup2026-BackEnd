@@ -119,7 +119,7 @@ public class AuthController : ControllerBase
             HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.None,
-            Expires = DateTimeOffset.UtcNow.AddHours(1),
+            Expires = DateTimeOffset.UtcNow.AddDays(30),
             Path = "/"
         });
 
@@ -170,7 +170,10 @@ public class AuthController : ControllerBase
             issuer: _config["Jwt:Issuer"],
             audience: _config["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddHours(1),
+            // 30 dias: o site e a API estão em domínios diferentes (Netlify x Railway),
+            // e o cookie de refresh é bloqueado como cookie de terceiros em vários
+            // navegadores. Token longo mantém o usuário conectado sem depender disso.
+            expires: DateTime.UtcNow.AddDays(30),
             signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);

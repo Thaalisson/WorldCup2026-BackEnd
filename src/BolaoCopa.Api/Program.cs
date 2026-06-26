@@ -158,7 +158,8 @@ var app = builder.Build();
 if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sync-results"
         or "db-stats" or "link-fixtures" or "link-fixtures-dry" or "match-predictions"
         or "set-password" or "validate-scoring" or "set-prediction" or "preview-simple"
-        or "recalc-all" or "report" or "setup-audit" or "audit-log")
+        or "recalc-all" or "report" or "setup-audit" or "audit-log" or "user-predictions" or "logins"
+        or "export-predictions")
 {
     await using var cliScope = app.Services.CreateAsyncScope();
     var sp = cliScope.ServiceProvider;
@@ -237,6 +238,109 @@ if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sy
                 sp.GetRequiredService<IScoringService>());
             Console.WriteLine(await previewer.PreviewSimpleAsync(args.Length > 1 ? args[1] : null));
             break;
+
+        case "export-predictions":
+        {
+            var ctxe = sp.GetRequiredService<AppDbContext>();
+            if (args.Length < 2) { Console.WriteLine("Uso: export-predictions <email-ou-nome> [bolão]"); break; }
+            var eu = await ctxe.Users.Where(u => u.Email == args[1] || u.Name == args[1]).ToListAsync();
+            if (eu.Count != 1) { Console.WriteLine($"Usuário '{args[1]}': {eu.Count} encontrado(s) — use o email."); break; }
+
+            var teamsE = await ctxe.Teams.ToDictionaryAsync(t => t.Id);
+            var matchesE = await ctxe.Matches.ToDictionaryAsync(m => m.Id);
+            var poolsE = await ctxe.Pools.ToDictionaryAsync(p => p.Id, p => p.Name);
+
+            var qe = ctxe.Predictions.Where(p => p.UserId == eu[0].Id);
+            if (args.Length > 2)
+            {
+                var pf = await ctxe.Pools.Where(p => p.Name == args[2] || p.InviteCode == args[2]).Select(p => p.Id).ToListAsync();
+                qe = qe.Where(p => pf.Contains(p.PoolId));
+            }
+            var predsE = await qe.ToListAsync();
+
+            var items = predsE
+                .OrderBy(p => poolsE.GetValueOrDefault(p.PoolId))
+                .ThenBy(p => matchesE.GetValueOrDefault(p.MatchId)?.KickoffAt)
+                .Select(p =>
+                {
+                    var m = matchesE.GetValueOrDefault(p.MatchId);
+                    var home = m != null ? teamsE.GetValueOrDefault(m.HomeTeamId) : null;
+                    var away = m != null ? teamsE.GetValueOrDefault(m.AwayTeamId) : null;
+                    return new
+                    {
+                        pool = poolsE.GetValueOrDefault(p.PoolId),
+                        jogo = home != null && away != null ? $"{home.Code} x {away.Code}" : "?",
+                        mandante = home?.Name,
+                        visitante = away?.Name,
+                        kickoff = m?.KickoffAt,
+                        palpite = new { mandante = p.HomeScorePrediction, visitante = p.AwayScorePrediction },
+                        resultado = m != null && m.IsFinished ? new { mandante = m.HomeScore, visitante = m.AwayScore } : null,
+                        pontos = p.PointsEarned,
+                        criadoEm = p.CreatedAt,
+                        editadoEm = p.UpdatedAt
+                    };
+                }).ToList();
+
+            var payload = new { usuario = eu[0].Name, email = eu[0].Email, geradoEm = DateTime.UtcNow, total = items.Count, palpites = items };
+            var json = System.Text.Json.JsonSerializer.Serialize(payload,
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+
+            var fileName = $"palpites_{eu[0].Name.Replace(" ", "_")}.json";
+            await System.IO.File.WriteAllTextAsync(fileName, json);
+            Console.WriteLine(json);
+            Console.WriteLine($">> {items.Count} palpite(s) salvos em {fileName}");
+            break;
+        }
+
+        case "logins":
+        {
+            var ctxl = sp.GetRequiredService<AppDbContext>();
+            if (args.Length < 2) { Console.WriteLine("Uso: logins <email-ou-nome>"); break; }
+            var lu = await ctxl.Users.Where(u => u.Email == args[1] || u.Name == args[1]).ToListAsync();
+            if (lu.Count != 1) { Console.WriteLine($"Usuário '{args[1]}': {lu.Count} encontrado(s)."); break; }
+            var toks = await ctxl.RefreshTokens.Where(t => t.UserId == lu[0].Id)
+                .OrderByDescending(t => t.CreatedAt).Take(15).ToListAsync();
+            Console.WriteLine($"[logins] {lu[0].Name} <{lu[0].Email}> — {toks.Count} sessão(ões) recente(s) (CreatedAt = login):");
+            foreach (var tk in toks)
+                Console.WriteLine($"  login {tk.CreatedAt:dd/MM HH:mm} | expira {tk.ExpiresAt:dd/MM} | revogado={tk.IsRevoked}");
+            break;
+        }
+
+        case "user-predictions":
+        {
+            var ctxu = sp.GetRequiredService<AppDbContext>();
+            if (args.Length < 2) { Console.WriteLine("Uso: user-predictions <email-ou-nome> [bolão]"); break; }
+            var us = await ctxu.Users.Where(u => u.Email == args[1] || u.Name == args[1]).ToListAsync();
+            if (us.Count != 1) { Console.WriteLine($"Usuário '{args[1]}': {us.Count} encontrado(s) — use o email."); break; }
+            var uid2 = us[0].Id;
+
+            var teams2 = await ctxu.Teams.ToDictionaryAsync(t => t.Id);
+            var matches2 = await ctxu.Matches.ToDictionaryAsync(m => m.Id);
+            var poolsById = await ctxu.Pools.ToDictionaryAsync(p => p.Id, p => p.Name);
+
+            var q = ctxu.Predictions.Where(p => p.UserId == uid2);
+            if (args.Length > 2)
+            {
+                var poolFilter = await ctxu.Pools
+                    .Where(p => p.Name == args[2] || p.InviteCode == args[2])
+                    .Select(p => p.Id).ToListAsync();
+                q = q.Where(p => poolFilter.Contains(p.PoolId));
+            }
+            var preds = await q.ToListAsync();
+
+            Console.WriteLine($"[user-predictions] {us[0].Name} <{us[0].Email}> — {preds.Count} palpite(s)");
+            Console.WriteLine("  (Criado = quando palpitou · Editado = se mudou depois)");
+            foreach (var p in preds.OrderBy(p => poolsById.GetValueOrDefault(p.PoolId)).ThenBy(p => matches2.GetValueOrDefault(p.MatchId)?.KickoffAt))
+            {
+                var m = matches2.GetValueOrDefault(p.MatchId);
+                var lbl = m != null && teams2.ContainsKey(m.HomeTeamId) && teams2.ContainsKey(m.AwayTeamId)
+                    ? $"{teams2[m.HomeTeamId].Code}×{teams2[m.AwayTeamId].Code}" : "?";
+                var pool = poolsById.GetValueOrDefault(p.PoolId) ?? "?";
+                var edit = p.UpdatedAt.HasValue ? $"✏️ EDITADO em {p.UpdatedAt:dd/MM HH:mm}" : "—";
+                Console.WriteLine($"  [{pool}] {lbl} = {p.HomeScorePrediction}×{p.AwayScorePrediction} | criado {p.CreatedAt:dd/MM HH:mm} | {edit}");
+            }
+            break;
+        }
 
         case "setup-audit":
         {

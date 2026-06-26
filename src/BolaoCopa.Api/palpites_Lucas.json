@@ -1,0 +1,737 @@
+{
+  "usuario": "Lucas",
+  "email": "lucasrittes@gmail.com",
+  "geradoEm": "2026-06-20T13:45:03.3851094Z",
+  "total": 44,
+  "palpites": [
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "MEX x RSA",
+      "mandante": "México",
+      "visitante": "África do Sul",
+      "kickoff": "2026-06-11T19:00:00Z",
+      "palpite": {
+        "mandante": 1,
+        "visitante": 1
+      },
+      "resultado": {
+        "mandante": 2,
+        "visitante": 0
+      },
+      "pontos": 0,
+      "criadoEm": "2026-06-09T00:13:52.332523Z",
+      "editadoEm": "2026-06-09T00:14:37.733803Z"
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "KOR x CZE",
+      "mandante": "Coreia do Sul",
+      "visitante": "Tchéquia",
+      "kickoff": "2026-06-12T02:00:00Z",
+      "palpite": {
+        "mandante": 2,
+        "visitante": 0
+      },
+      "resultado": {
+        "mandante": 2,
+        "visitante": 1
+      },
+      "pontos": 5,
+      "criadoEm": "2026-06-11T22:50:25.843935Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "CAN x BIH",
+      "mandante": "Canadá",
+      "visitante": "Bósnia e Herzegovina",
+      "kickoff": "2026-06-12T19:00:00Z",
+      "palpite": {
+        "mandante": 1,
+        "visitante": 0
+      },
+      "resultado": {
+        "mandante": 1,
+        "visitante": 1
+      },
+      "pontos": 0,
+      "criadoEm": "2026-06-11T22:50:43.722417Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "USA x PAR",
+      "mandante": "EUA",
+      "visitante": "Paraguai",
+      "kickoff": "2026-06-13T01:00:00Z",
+      "palpite": {
+        "mandante": 2,
+        "visitante": 0
+      },
+      "resultado": {
+        "mandante": 4,
+        "visitante": 1
+      },
+      "pontos": 5,
+      "criadoEm": "2026-06-11T22:50:55.373344Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "QAT x SUI",
+      "mandante": "Catar",
+      "visitante": "Suíça",
+      "kickoff": "2026-06-13T19:00:00Z",
+      "palpite": {
+        "mandante": 0,
+        "visitante": 1
+      },
+      "resultado": {
+        "mandante": 1,
+        "visitante": 1
+      },
+      "pontos": 0,
+      "criadoEm": "2026-06-11T22:51:04.83366Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "BRA x MAR",
+      "mandante": "Brasil",
+      "visitante": "Marrocos",
+      "kickoff": "2026-06-13T22:00:00Z",
+      "palpite": {
+        "mandante": 3,
+        "visitante": 0
+      },
+      "resultado": {
+        "mandante": 1,
+        "visitante": 1
+      },
+      "pontos": 0,
+      "criadoEm": "2026-06-11T22:51:12.301277Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "HAI x SCO",
+      "mandante": "Haiti",
+      "visitante": "Escócia",
+      "kickoff": "2026-06-14T01:00:00Z",
+      "palpite": {
+        "mandante": 2,
+        "visitante": 2
+      },
+      "resultado": {
+        "mandante": 0,
+        "visitante": 1
+      },
+      "pontos": 0,
+      "criadoEm": "2026-06-11T22:51:16.290388Z",
+      "editadoEm": "2026-06-11T22:51:27.988135Z"
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "FRA x SEN",
+      "mandante": "França",
+      "visitante": "Senegal",
+      "kickoff": "2026-06-16T19:00:00Z",
+      "palpite": {
+        "mandante": 3,
+        "visitante": 0
+      },
+      "resultado": {
+        "mandante": 3,
+        "visitante": 1
+      },
+      "pontos": 5,
+      "criadoEm": "2026-06-16T16:51:06.459274Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "IRQ x NOR",
+      "mandante": "Iraque",
+      "visitante": "Noruega",
+      "kickoff": "2026-06-16T22:00:00Z",
+      "palpite": {
+        "mandante": 0,
+        "visitante": 2
+      },
+      "resultado": {
+        "mandante": 1,
+        "visitante": 4
+      },
+      "pontos": 5,
+      "criadoEm": "2026-06-16T16:51:09.444785Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "ARG x ALG",
+      "mandante": "Argentina",
+      "visitante": "Argélia",
+      "kickoff": "2026-06-17T01:00:00Z",
+      "palpite": {
+        "mandante": 3,
+        "visitante": 0
+      },
+      "resultado": {
+        "mandante": 3,
+        "visitante": 0
+      },
+      "pontos": 10,
+      "criadoEm": "2026-06-16T16:51:14.810599Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "AUT x JOR",
+      "mandante": "Áustria",
+      "visitante": "Jordânia",
+      "kickoff": "2026-06-17T04:00:00Z",
+      "palpite": {
+        "mandante": 1,
+        "visitante": 0
+      },
+      "resultado": {
+        "mandante": 3,
+        "visitante": 1
+      },
+      "pontos": 5,
+      "criadoEm": "2026-06-16T16:51:16.994448Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "POR x COD",
+      "mandante": "Portugal",
+      "visitante": "RD Congo",
+      "kickoff": "2026-06-17T17:00:00Z",
+      "palpite": {
+        "mandante": 4,
+        "visitante": 0
+      },
+      "resultado": {
+        "mandante": 1,
+        "visitante": 1
+      },
+      "pontos": 0,
+      "criadoEm": "2026-06-16T16:51:20.550169Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "ENG x CRO",
+      "mandante": "Inglaterra",
+      "visitante": "Croácia",
+      "kickoff": "2026-06-17T20:00:00Z",
+      "palpite": {
+        "mandante": 0,
+        "visitante": 1
+      },
+      "resultado": {
+        "mandante": 4,
+        "visitante": 2
+      },
+      "pontos": 0,
+      "criadoEm": "2026-06-16T16:51:38.31985Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "GHA x PAN",
+      "mandante": "Gana",
+      "visitante": "Panamá",
+      "kickoff": "2026-06-17T23:00:00Z",
+      "palpite": {
+        "mandante": 2,
+        "visitante": 0
+      },
+      "resultado": {
+        "mandante": 1,
+        "visitante": 0
+      },
+      "pontos": 5,
+      "criadoEm": "2026-06-16T16:51:42.650733Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "UZB x COL",
+      "mandante": "Uzbequistão",
+      "visitante": "Colômbia",
+      "kickoff": "2026-06-18T02:00:00Z",
+      "palpite": {
+        "mandante": 0,
+        "visitante": 2
+      },
+      "resultado": {
+        "mandante": 1,
+        "visitante": 3
+      },
+      "pontos": 5,
+      "criadoEm": "2026-06-16T16:51:52.319973Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "CZE x RSA",
+      "mandante": "Tchéquia",
+      "visitante": "África do Sul",
+      "kickoff": "2026-06-18T16:00:00Z",
+      "palpite": {
+        "mandante": 0,
+        "visitante": 1
+      },
+      "resultado": {
+        "mandante": 1,
+        "visitante": 1
+      },
+      "pontos": 0,
+      "criadoEm": "2026-06-16T16:51:56.407306Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "SUI x BIH",
+      "mandante": "Suíça",
+      "visitante": "Bósnia e Herzegovina",
+      "kickoff": "2026-06-18T19:00:00Z",
+      "palpite": {
+        "mandante": 2,
+        "visitante": 0
+      },
+      "resultado": {
+        "mandante": 4,
+        "visitante": 1
+      },
+      "pontos": 5,
+      "criadoEm": "2026-06-16T16:52:01.754075Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "CAN x QAT",
+      "mandante": "Canadá",
+      "visitante": "Catar",
+      "kickoff": "2026-06-18T22:00:00Z",
+      "palpite": {
+        "mandante": 1,
+        "visitante": 0
+      },
+      "resultado": {
+        "mandante": 6,
+        "visitante": 0
+      },
+      "pontos": 5,
+      "criadoEm": "2026-06-16T16:52:04.269929Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "MEX x KOR",
+      "mandante": "México",
+      "visitante": "Coreia do Sul",
+      "kickoff": "2026-06-19T01:00:00Z",
+      "palpite": {
+        "mandante": 0,
+        "visitante": 2
+      },
+      "resultado": {
+        "mandante": 1,
+        "visitante": 0
+      },
+      "pontos": 0,
+      "criadoEm": "2026-06-16T16:52:05.417711Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "USA x AUS",
+      "mandante": "EUA",
+      "visitante": "Austrália",
+      "kickoff": "2026-06-19T19:00:00Z",
+      "palpite": {
+        "mandante": 2,
+        "visitante": 0
+      },
+      "resultado": {
+        "mandante": 2,
+        "visitante": 0
+      },
+      "pontos": 10,
+      "criadoEm": "2026-06-16T16:52:14.13236Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "SCO x MAR",
+      "mandante": "Escócia",
+      "visitante": "Marrocos",
+      "kickoff": "2026-06-19T22:00:00Z",
+      "palpite": {
+        "mandante": 0,
+        "visitante": 2
+      },
+      "resultado": {
+        "mandante": 0,
+        "visitante": 1
+      },
+      "pontos": 5,
+      "criadoEm": "2026-06-16T16:52:18.566586Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "BRA x HAI",
+      "mandante": "Brasil",
+      "visitante": "Haiti",
+      "kickoff": "2026-06-20T00:30:00Z",
+      "palpite": {
+        "mandante": 4,
+        "visitante": 1
+      },
+      "resultado": {
+        "mandante": 3,
+        "visitante": 0
+      },
+      "pontos": 5,
+      "criadoEm": "2026-06-16T16:52:28.427719Z",
+      "editadoEm": "2026-06-16T16:52:35.446568Z"
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "TUR x PAR",
+      "mandante": "Turquia",
+      "visitante": "Paraguai",
+      "kickoff": "2026-06-20T03:00:00Z",
+      "palpite": {
+        "mandante": 1,
+        "visitante": 0
+      },
+      "resultado": {
+        "mandante": 0,
+        "visitante": 1
+      },
+      "pontos": 0,
+      "criadoEm": "2026-06-16T16:52:44.20993Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "NED x SWE",
+      "mandante": "Holanda",
+      "visitante": "Suécia",
+      "kickoff": "2026-06-20T17:00:00Z",
+      "palpite": {
+        "mandante": 2,
+        "visitante": 1
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-16T16:52:47.423485Z",
+      "editadoEm": "2026-06-19T17:23:41.132758Z"
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "GER x CIV",
+      "mandante": "Alemanha",
+      "visitante": "Costa do Marfim",
+      "kickoff": "2026-06-20T20:00:00Z",
+      "palpite": {
+        "mandante": 4,
+        "visitante": 0
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-16T16:52:54.777335Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "ECU x CUW",
+      "mandante": "Equador",
+      "visitante": "Curaçao",
+      "kickoff": "2026-06-21T00:00:00Z",
+      "palpite": {
+        "mandante": 2,
+        "visitante": 0
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-16T16:52:57.289966Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "TUN x JPN",
+      "mandante": "Tunísia",
+      "visitante": "Japão",
+      "kickoff": "2026-06-21T04:00:00Z",
+      "palpite": {
+        "mandante": 0,
+        "visitante": 2
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-16T16:53:00.40727Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "ESP x KSA",
+      "mandante": "Espanha",
+      "visitante": "Arábia Saudita",
+      "kickoff": "2026-06-21T16:00:00Z",
+      "palpite": {
+        "mandante": 1,
+        "visitante": 0
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-16T16:53:08.435283Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "BEL x IRN",
+      "mandante": "Bélgica",
+      "visitante": "Irã",
+      "kickoff": "2026-06-21T19:00:00Z",
+      "palpite": {
+        "mandante": 2,
+        "visitante": 0
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-16T16:53:12.895646Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "URU x CPV",
+      "mandante": "Uruguai",
+      "visitante": "Cabo Verde",
+      "kickoff": "2026-06-21T22:00:00Z",
+      "palpite": {
+        "mandante": 1,
+        "visitante": 0
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-16T16:53:18.355616Z",
+      "editadoEm": "2026-06-19T17:24:13.904667Z"
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "NZL x EGY",
+      "mandante": "Nova Zelândia",
+      "visitante": "Egito",
+      "kickoff": "2026-06-22T01:00:00Z",
+      "palpite": {
+        "mandante": 1,
+        "visitante": 0
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-16T16:53:20.365931Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "ARG x AUT",
+      "mandante": "Argentina",
+      "visitante": "Áustria",
+      "kickoff": "2026-06-22T17:00:00Z",
+      "palpite": {
+        "mandante": 3,
+        "visitante": 0
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-16T16:53:25.704218Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "FRA x IRQ",
+      "mandante": "França",
+      "visitante": "Iraque",
+      "kickoff": "2026-06-22T21:00:00Z",
+      "palpite": {
+        "mandante": 2,
+        "visitante": 0
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-16T16:53:46.227974Z",
+      "editadoEm": "2026-06-16T16:53:46.244487Z"
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "NOR x SEN",
+      "mandante": "Noruega",
+      "visitante": "Senegal",
+      "kickoff": "2026-06-23T00:00:00Z",
+      "palpite": {
+        "mandante": 3,
+        "visitante": 1
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-16T16:54:34.231678Z",
+      "editadoEm": "2026-06-19T17:24:23.506089Z"
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "JOR x ALG",
+      "mandante": "Jordânia",
+      "visitante": "Argélia",
+      "kickoff": "2026-06-23T03:00:00Z",
+      "palpite": {
+        "mandante": 1,
+        "visitante": 1
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-16T16:55:57.878035Z",
+      "editadoEm": "2026-06-16T16:56:02.427472Z"
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "POR x UZB",
+      "mandante": "Portugal",
+      "visitante": "Uzbequistão",
+      "kickoff": "2026-06-23T17:00:00Z",
+      "palpite": {
+        "mandante": 2,
+        "visitante": 0
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-19T17:24:49.452837Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "ENG x GHA",
+      "mandante": "Inglaterra",
+      "visitante": "Gana",
+      "kickoff": "2026-06-23T20:00:00Z",
+      "palpite": {
+        "mandante": 4,
+        "visitante": 1
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-19T17:24:29.736824Z",
+      "editadoEm": "2026-06-19T17:24:30.321744Z"
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "PAN x CRO",
+      "mandante": "Panamá",
+      "visitante": "Croácia",
+      "kickoff": "2026-06-23T23:00:00Z",
+      "palpite": {
+        "mandante": 1,
+        "visitante": 0
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-19T17:24:33.950415Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "BIH x QAT",
+      "mandante": "Bósnia e Herzegovina",
+      "visitante": "Catar",
+      "kickoff": "2026-06-24T19:00:00Z",
+      "palpite": {
+        "mandante": 1,
+        "visitante": 0
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-19T17:24:57.655278Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "SUI x CAN",
+      "mandante": "Suíça",
+      "visitante": "Canadá",
+      "kickoff": "2026-06-24T19:00:00Z",
+      "palpite": {
+        "mandante": 0,
+        "visitante": 3
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-19T17:25:01.944313Z",
+      "editadoEm": "2026-06-19T17:25:04.953391Z"
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "MAR x HAI",
+      "mandante": "Marrocos",
+      "visitante": "Haiti",
+      "kickoff": "2026-06-24T22:00:00Z",
+      "palpite": {
+        "mandante": 1,
+        "visitante": 0
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-19T17:25:13.681144Z",
+      "editadoEm": "2026-06-19T17:25:13.882327Z"
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "SCO x BRA",
+      "mandante": "Escócia",
+      "visitante": "Brasil",
+      "kickoff": "2026-06-24T22:00:00Z",
+      "palpite": {
+        "mandante": 0,
+        "visitante": 3
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-19T17:25:11.036274Z",
+      "editadoEm": null
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "CZE x MEX",
+      "mandante": "Tchéquia",
+      "visitante": "México",
+      "kickoff": "2026-06-25T01:00:00Z",
+      "palpite": {
+        "mandante": 1,
+        "visitante": 2
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-16T16:54:02.417562Z",
+      "editadoEm": "2026-06-16T16:54:08.34895Z"
+    },
+    {
+      "pool": "BOLAO_BRP2026",
+      "jogo": "RSA x KOR",
+      "mandante": "África do Sul",
+      "visitante": "Coreia do Sul",
+      "kickoff": "2026-06-25T01:00:00Z",
+      "palpite": {
+        "mandante": 1,
+        "visitante": 0
+      },
+      "resultado": null,
+      "pontos": 0,
+      "criadoEm": "2026-06-16T16:53:59.345923Z",
+      "editadoEm": null
+    }
+  ]
+}
