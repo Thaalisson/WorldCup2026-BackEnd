@@ -1,39 +1,14 @@
-🏆 BOLAO_BRP2026 — RELATÓRIO DE PONTOS
+🏆 BRP PRIDE — RELATÓRIO DE PONTOS
 Regra: placar exato = 10 · acertou vencedor/empate = 5 · errou = 0
-Jogos contabilizados: 17
+Jogos contabilizados: 66
 
 CLASSIFICAÇÃO
-  1º Brenno — 65 pts
-  2º Thalisson — 65 pts
-  3º Renan — 50 pts
-  4º Miquéias Nogueira Loureiro — 50 pts
-  5º israel — 40 pts
-  6º dinhO — 35 pts
-  7º Vitor Macedo Abenza — 35 pts
-  8º Joyce — 35 pts
-  9º Lucas — 15 pts
+  1º Thalisson — 255 pts
+  2º Andre de Martini — 245 pts
+  3º Rafael — 0 pts
 
 DETALHE POR JOGADOR
-▸ Brenno — 65 pts  (4 exatos, 5 no vencedor, 8 erros)
-   🎯 MEX 2×0 RSA · seu palpite 2×0 · +10
-   ✓ KOR 2×1 CZE · seu palpite 2×0 · +5
-   ✗ CAN 1×1 BIH · seu palpite 3×0 · +0
-   ✓ USA 4×1 PAR · seu palpite 2×0 · +5
-   ✗ QAT 1×1 SUI · seu palpite 0×3 · +0
-   ✗ BRA 1×1 MAR · seu palpite 3×0 · +0
-   ✗ HAI 0×1 SCO · seu palpite 2×0 · +0
-   🎯 AUS 2×0 TUR · seu palpite 2×0 · +10
-   ✓ GER 7×1 CUW · seu palpite 7×0 · +5
-   ✗ NED 2×2 JPN · seu palpite 2×0 · +0
-   🎯 CIV 1×0 ECU · seu palpite 1×0 · +10
-   ✓ SWE 5×1 TUN · seu palpite 2×0 · +5
-   ✗ ESP 0×0 CPV · seu palpite 8×0 · +0
-   ✗ BEL 1×1 EGY · seu palpite 2×0 · +0
-   ✗ KSA 1×1 URU · seu palpite 1×0 · +0
-   🎯 IRN 2×2 NZL · seu palpite 2×2 · +10
-   ✓ FRA 3×1 SEN · seu palpite 3×0 · +5
-
-▸ Thalisson — 65 pts  (2 exatos, 9 no vencedor, 6 erros)
+▸ Thalisson — 255 pts  (9 exatos, 33 no vencedor, 24 erros)
    🎯 MEX 2×0 RSA · seu palpite 2×0 · +10
    ✓ KOR 2×1 CZE · seu palpite 1×0 · +5
    ✗ CAN 1×1 BIH · seu palpite 1×0 · +0
@@ -42,137 +17,133 @@ DETALHE POR JOGADOR
    ✗ BRA 1×1 MAR · seu palpite 2×0 · +0
    ✓ HAI 0×1 SCO · seu palpite 0×2 · +5
    ✓ AUS 2×0 TUR · seu palpite 1×0 · +5
-   ✓ GER 7×1 CUW · seu palpite 2×0 · +5
+   ✓ GER 7×1 CUW · seu palpite 3×0 · +5
    ✗ NED 2×2 JPN · seu palpite 1×0 · +0
    🎯 CIV 1×0 ECU · seu palpite 1×0 · +10
-   ✓ SWE 5×1 TUN · seu palpite 2×1 · +5
-   ✗ ESP 0×0 CPV · seu palpite 3×0 · +0
+   ✗ SWE 5×1 TUN · seu palpite 2×3 · +0
+   ✗ ESP 0×0 CPV · seu palpite 2×0 · +0
    ✓ BEL 1×1 EGY · seu palpite 2×2 · +5
-   ✗ KSA 1×1 URU · seu palpite 0×1 · +0
+   ✓ KSA 1×1 URU · seu palpite 0×0 · +5
    ✓ IRN 2×2 NZL · seu palpite 0×0 · +5
    ✓ FRA 3×1 SEN · seu palpite 1×0 · +5
+   ✓ IRQ 1×4 NOR · seu palpite 0×4 · +5
+   🎯 ARG 3×0 ALG · seu palpite 3×0 · +10
+   ✓ AUT 3×1 JOR · seu palpite 1×0 · +5
+   ✗ POR 1×1 COD · seu palpite 3×0 · +0
+   ✓ ENG 4×2 CRO · seu palpite 2×0 · +5
+   🎯 GHA 1×0 PAN · seu palpite 1×0 · +10
+   ✓ UZB 1×3 COL · seu palpite 0×2 · +5
+   ✗ CZE 1×1 RSA · seu palpite 1×0 · +0
+   ✓ SUI 4×1 BIH · seu palpite 2×0 · +5
+   ✓ CAN 6×0 QAT · seu palpite 2×0 · +5
+   ✓ MEX 1×0 KOR · seu palpite 2×1 · +5
+   🎯 USA 2×0 AUS · seu palpite 2×0 · +10
+   ✓ SCO 0×1 MAR · seu palpite 0×2 · +5
+   🎯 BRA 3×0 HAI · seu palpite 3×0 · +10
+   ✗ TUR 0×1 PAR · seu palpite 3×0 · +0
+   ✓ NED 5×1 SWE · seu palpite 2×0 · +5
+   ✗ GER 2×1 CIV · seu palpite 0×0 · +0
+   ✗ ECU 0×0 CUW · seu palpite 1×0 · +0
+   ✓ TUN 0×4 JPN · seu palpite 0×2 · +5
+   ✓ ESP 5×0 KSA · seu palpite 2×0 · +5
+   ✗ BEL 0×0 IRN · seu palpite 3×0 · +0
+   ✗ URU 2×2 CPV · seu palpite 2×0 · +0
+   ✓ NZL 1×3 EGY · seu palpite 0×1 · +5
+   ✓ ARG 2×0 AUT · seu palpite 3×0 · +5
+   🎯 FRA 3×0 IRQ · seu palpite 3×0 · +10
+   ✓ NOR 3×2 SEN · seu palpite 3×0 · +5
+   ✗ JOR 1×2 ALG · seu palpite 0×0 · +0
+   ✓ POR 5×0 UZB · seu palpite 3×0 · +5
+   ✗ ENG 0×0 GHA · seu palpite 2×0 · +0
+   🎯 PAN 0×1 CRO · seu palpite 0×1 · +10
+   🎯 COL 1×0 COD · seu palpite 1×0 · +10
+   ✗ SUI 2×1 CAN · seu palpite 0×1 · +0
+   ✓ BIH 3×1 QAT · seu palpite 2×0 · +5
+   ✓ SCO 0×3 BRA · seu palpite 0×2 · +5
+   ✓ MAR 4×2 HAI · seu palpite 2×0 · +5
+   ✗ RSA 1×0 KOR · seu palpite 0×2 · +0
+   ✓ CZE 0×3 MEX · seu palpite 0×1 · +5
+   ✓ CUW 0×2 CIV · seu palpite 0×1 · +5
+   ✗ ECU 2×1 GER · seu palpite 0×2 · +0
+   ✓ TUN 1×3 NED · seu palpite 0×3 · +5
+   ✗ JPN 1×1 SWE · seu palpite 1×0 · +0
+   ✗ PAR 0×0 AUS · seu palpite 2×0 · +0
+   ✗ TUR 3×2 USA · seu palpite 0×1 · +0
+   ✗ NOR 1×4 FRA · seu palpite 2×1 · +0
+   ✓ SEN 5×0 IRQ · seu palpite 1×0 · +5
+   ✓ URU 0×1 ESP · seu palpite 1×3 · +5
+   ✗ CPV 0×0 KSA · seu palpite 1×0 · +0
+   ✓ NZL 1×5 BEL · seu palpite 0×3 · +5
+   ✗ EGY 1×1 IRN · seu palpite 1×0 · +0
 
-▸ Renan — 50 pts  (1 exatos, 8 no vencedor, 8 erros)
+▸ Andre de Martini — 245 pts  (8 exatos, 33 no vencedor, 25 erros)
    🎯 MEX 2×0 RSA · seu palpite 2×0 · +10
-   ✓ KOR 2×1 CZE · seu palpite 1×0 · +5
-   ✗ CAN 1×1 BIH · seu palpite 0×2 · +0
-   ✓ USA 4×1 PAR · seu palpite 2×0 · +5
-   ✗ QAT 1×1 SUI · seu palpite 0×2 · +0
-   ✗ BRA 1×1 MAR · seu palpite 3×1 · +0
-   ✓ HAI 0×1 SCO · seu palpite 0×3 · +5
-   ✗ AUS 2×0 TUR · seu palpite 0×1 · +0
-   ✓ GER 7×1 CUW · seu palpite 4×0 · +5
-   ✗ NED 2×2 JPN · seu palpite 1×2 · +0
-   ✓ CIV 1×0 ECU · seu palpite 2×0 · +5
-   ✓ SWE 5×1 TUN · seu palpite 1×0 · +5
-   ✗ ESP 0×0 CPV · seu palpite 5×0 · +0
-   ✗ BEL 1×1 EGY · seu palpite 2×1 · +0
-   ✗ KSA 1×1 URU · seu palpite 2×1 · +0
-   ✓ IRN 2×2 NZL · seu palpite 1×1 · +5
-   ✓ FRA 3×1 SEN · seu palpite 2×0 · +5
-
-▸ Miquéias Nogueira Loureiro — 50 pts  (2 exatos, 6 no vencedor, 9 erros)
-   🎯 MEX 2×0 RSA · seu palpite 2×0 · +10
-   ✓ KOR 2×1 CZE · seu palpite 1×0 · +5
-   ✗ CAN 1×1 BIH · seu palpite 0×2 · +0
-   ✓ USA 4×1 PAR · seu palpite 2×0 · +5
-   ✗ QAT 1×1 SUI · seu palpite 0×3 · +0
-   ✗ BRA 1×1 MAR · seu palpite 2×0 · +0
-   ✓ HAI 0×1 SCO · seu palpite 1×3 · +5
-   ✗ AUS 2×0 TUR · seu palpite 1×2 · +0
-   ✓ GER 7×1 CUW · seu palpite 4×0 · +5
-   ✗ NED 2×2 JPN · seu palpite 2×1 · +0
-   🎯 CIV 1×0 ECU · seu palpite 1×0 · +10
-   ✓ SWE 5×1 TUN · seu palpite 1×0 · +5
-   ✗ ESP 0×0 CPV · seu palpite 4×0 · +0
-   ✗ BEL 1×1 EGY · seu palpite 2×0 · +0
-   ✗ KSA 1×1 URU · seu palpite 0×2 · +0
-   ✗ IRN 2×2 NZL · seu palpite 1×0 · +0
-   ✓ FRA 3×1 SEN · seu palpite 2×0 · +5
-
-▸ israel — 40 pts  (1 exatos, 6 no vencedor, 10 erros)
-   ✓ MEX 2×0 RSA · seu palpite 1×0 · +5
-   🎯 KOR 2×1 CZE · seu palpite 2×1 · +10
+   ✗ KOR 2×1 CZE · seu palpite 1×1 · +0
    ✗ CAN 1×1 BIH · seu palpite 1×0 · +0
-   ✓ USA 4×1 PAR · seu palpite 2×0 · +5
+   ✓ USA 4×1 PAR · seu palpite 2×1 · +5
    ✗ QAT 1×1 SUI · seu palpite 0×2 · +0
-   ✗ BRA 1×1 MAR · seu palpite 2×0 · +0
-   ✓ HAI 0×1 SCO · seu palpite 0×3 · +5
-   ✗ AUS 2×0 TUR · seu palpite 0×2 · +0
-   ✓ GER 7×1 CUW · seu palpite 4×0 · +5
-   ✗ NED 2×2 JPN · seu palpite 1×0 · +0
-   ✗ CIV 1×0 ECU · seu palpite 0×2 · +0
+   ✗ BRA 1×1 MAR · seu palpite 1×2 · +0
+   🎯 HAI 0×1 SCO · seu palpite 0×1 · +10
+   ✗ AUS 2×0 TUR · seu palpite 0×0 · +0
+   ✓ GER 7×1 CUW · seu palpite 3×0 · +5
+   ✗ NED 2×2 JPN · seu palpite 0×2 · +0
+   ✗ CIV 1×0 ECU · seu palpite 0×1 · +0
    ✓ SWE 5×1 TUN · seu palpite 1×0 · +5
    ✗ ESP 0×0 CPV · seu palpite 3×0 · +0
-   ✗ BEL 1×1 EGY · seu palpite 3×0 · +0
-   ✗ KSA 1×1 URU · seu palpite 0×2 · +0
-   ✗ IRN 2×2 NZL · seu palpite 0×1 · +0
-   ✓ FRA 3×1 SEN · seu palpite 2×0 · +5
-
-▸ dinhO — 35 pts  (1 exatos, 5 no vencedor, 11 erros)
-   🎯 MEX 2×0 RSA · seu palpite 2×0 · +10
-   ✓ KOR 2×1 CZE · seu palpite 1×0 · +5
-   ✓ CAN 1×1 BIH · seu palpite 0×0 · +5
-   ✗ USA 4×1 PAR · seu palpite 0×1 · +0
-   ✗ QAT 1×1 SUI · seu palpite 0×2 · +0
-   ✗ BRA 1×1 MAR · seu palpite 2×0 · +0
-   ✗ HAI 0×1 SCO · seu palpite 1×0 · +0
-   ✗ AUS 2×0 TUR · seu palpite 0×2 · +0
-   ✓ GER 7×1 CUW · seu palpite 5×0 · +5
-   ✗ NED 2×2 JPN · seu palpite 1×0 · +0
-   ✗ CIV 1×0 ECU · seu palpite 0×2 · +0
-   ✓ SWE 5×1 TUN · seu palpite 3×0 · +5
-   ✗ ESP 0×0 CPV · seu palpite 6×0 · +0
    ✗ BEL 1×1 EGY · seu palpite 1×0 · +0
-   ✗ KSA 1×1 URU · seu palpite 0×3 · +0
-   ✗ IRN 2×2 NZL · seu palpite 1×0 · +0
-   ✓ FRA 3×1 SEN · seu palpite 4×2 · +5
-
-▸ Vitor Macedo Abenza — 35 pts  (1 exatos, 5 no vencedor, 11 erros)
-   🎯 MEX 2×0 RSA · seu palpite 2×0 · +10
-   ✓ KOR 2×1 CZE · seu palpite 1×0 · +5
-   ✗ CAN 1×1 BIH · seu palpite 1×0 · +0
-   ✗ USA 4×1 PAR · seu palpite 0×1 · +0
-   ✗ QAT 1×1 SUI · seu palpite 1×3 · +0
-   ✗ BRA 1×1 MAR · seu palpite 2×0 · +0
-   ✗ HAI 0×1 SCO · seu palpite 0×0 · +0
-   ✗ AUS 2×0 TUR · seu palpite 2×2 · +0
-   ✓ GER 7×1 CUW · seu palpite 4×1 · +5
-   ✗ NED 2×2 JPN · seu palpite 2×0 · +0
-   ✗ CIV 1×0 ECU · seu palpite 2×2 · +0
-   ✓ SWE 5×1 TUN · seu palpite 1×0 · +5
-   ✗ ESP 0×0 CPV · seu palpite 5×0 · +0
-   ✗ BEL 1×1 EGY · seu palpite 3×0 · +0
-   ✗ KSA 1×1 URU · seu palpite 1×2 · +0
-   ✓ IRN 2×2 NZL · seu palpite 1×1 · +5
-   ✓ FRA 3×1 SEN · seu palpite 3×0 · +5
-
-▸ Joyce — 35 pts  (1 exatos, 5 no vencedor, 10 erros, 1 sem palpite)
-   ✓ MEX 2×0 RSA · seu palpite 2×1 · +5
-   ✗ KOR 2×1 CZE · seu palpite 0×1 · +0
-   ✗ CAN 1×1 BIH · seu palpite 2×0 · +0
-   ✓ USA 4×1 PAR · seu palpite 1×0 · +5
-   ✗ QAT 1×1 SUI · seu palpite 1×0 · +0
-   ✗ BRA 1×1 MAR · seu palpite 2×1 · +0
-   ✗ HAI 0×1 SCO · seu palpite 2×1 · +0
-   ✓ GER 7×1 CUW · seu palpite 3×0 · +5
-   ✗ NED 2×2 JPN · seu palpite 2×0 · +0
-   🎯 CIV 1×0 ECU · seu palpite 1×0 · +10
-   ✓ SWE 5×1 TUN · seu palpite 2×1 · +5
-   ✗ ESP 0×0 CPV · seu palpite 4×0 · +0
-   ✗ BEL 1×1 EGY · seu palpite 3×2 · +0
-   ✗ KSA 1×1 URU · seu palpite 1×0 · +0
-   ✗ IRN 2×2 NZL · seu palpite 0×1 · +0
+   ✗ KSA 1×1 URU · seu palpite 0×1 · +0
+   ✓ IRN 2×2 NZL · seu palpite 0×0 · +5
    ✓ FRA 3×1 SEN · seu palpite 2×0 · +5
+   ✓ IRQ 1×4 NOR · seu palpite 0×2 · +5
+   ✓ ARG 3×0 ALG · seu palpite 2×0 · +5
+   ✓ AUT 3×1 JOR · seu palpite 1×0 · +5
+   ✗ POR 1×1 COD · seu palpite 3×0 · +0
+   ✓ ENG 4×2 CRO · seu palpite 2×0 · +5
+   🎯 GHA 1×0 PAN · seu palpite 1×0 · +10
+   ✓ UZB 1×3 COL · seu palpite 0×1 · +5
+   ✗ CZE 1×1 RSA · seu palpite 2×0 · +0
+   ✓ SUI 4×1 BIH · seu palpite 2×0 · +5
+   ✓ CAN 6×0 QAT · seu palpite 1×0 · +5
+   ✗ MEX 1×0 KOR · seu palpite 0×1 · +0
+   ✓ USA 2×0 AUS · seu palpite 2×1 · +5
+   ✓ SCO 0×1 MAR · seu palpite 0×2 · +5
+   🎯 BRA 3×0 HAI · seu palpite 3×0 · +10
+   ✓ TUR 0×1 PAR · seu palpite 1×2 · +5
+   ✓ NED 5×1 SWE · seu palpite 1×0 · +5
+   ✓ GER 2×1 CIV · seu palpite 2×0 · +5
+   ✗ ECU 0×0 CUW · seu palpite 2×0 · +0
+   ✓ TUN 0×4 JPN · seu palpite 0×2 · +5
+   ✓ ESP 5×0 KSA · seu palpite 3×0 · +5
+   ✗ BEL 0×0 IRN · seu palpite 1×0 · +0
+   ✗ URU 2×2 CPV · seu palpite 3×0 · +0
+   ✗ NZL 1×3 EGY · seu palpite 1×0 · +0
+   ✓ ARG 2×0 AUT · seu palpite 3×0 · +5
+   ✓ FRA 3×0 IRQ · seu palpite 2×0 · +5
+   ✓ NOR 3×2 SEN · seu palpite 2×0 · +5
+   ✗ JOR 1×2 ALG · seu palpite 0×0 · +0
+   ✓ POR 5×0 UZB · seu palpite 2×0 · +5
+   ✗ ENG 0×0 GHA · seu palpite 2×0 · +0
+   🎯 PAN 0×1 CRO · seu palpite 0×1 · +10
+   🎯 COL 1×0 COD · seu palpite 1×0 · +10
+   ✓ SUI 2×1 CAN · seu palpite 1×0 · +5
+   ✓ BIH 3×1 QAT · seu palpite 1×0 · +5
+   ✓ SCO 0×3 BRA · seu palpite 0×2 · +5
+   ✓ MAR 4×2 HAI · seu palpite 2×0 · +5
+   ✗ RSA 1×0 KOR · seu palpite 0×2 · +0
+   ✓ CZE 0×3 MEX · seu palpite 0×2 · +5
+   🎯 CUW 0×2 CIV · seu palpite 0×2 · +10
+   ✗ ECU 2×1 GER · seu palpite 0×2 · +0
+   ✓ TUN 1×3 NED · seu palpite 0×1 · +5
+   ✗ JPN 1×1 SWE · seu palpite 2×0 · +0
+   ✓ PAR 0×0 AUS · seu palpite 1×1 · +5
+   ✗ TUR 3×2 USA · seu palpite 0×1 · +0
+   ✓ NOR 1×4 FRA · seu palpite 0×1 · +5
+   ✓ SEN 5×0 IRQ · seu palpite 1×0 · +5
+   🎯 URU 0×1 ESP · seu palpite 0×1 · +10
+   ✗ CPV 0×0 KSA · seu palpite 0×1 · +0
+   ✓ NZL 1×5 BEL · seu palpite 0×1 · +5
+   ✗ EGY 1×1 IRN · seu palpite 1×0 · +0
 
-▸ Lucas — 15 pts  (0 exatos, 3 no vencedor, 5 erros, 9 sem palpite)
-   ✗ MEX 2×0 RSA · seu palpite 1×1 · +0
-   ✓ KOR 2×1 CZE · seu palpite 2×0 · +5
-   ✗ CAN 1×1 BIH · seu palpite 1×0 · +0
-   ✓ USA 4×1 PAR · seu palpite 2×0 · +5
-   ✗ QAT 1×1 SUI · seu palpite 0×1 · +0
-   ✗ BRA 1×1 MAR · seu palpite 3×0 · +0
-   ✗ HAI 0×1 SCO · seu palpite 2×2 · +0
-   ✓ FRA 3×1 SEN · seu palpite 3×0 · +5
+▸ Rafael — 0 pts  (0 exatos, 0 no vencedor, 0 erros, 66 sem palpite)
 
 ────────────────────────────────────────

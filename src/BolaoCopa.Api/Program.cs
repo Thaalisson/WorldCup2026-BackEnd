@@ -159,13 +159,182 @@ if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sy
         or "db-stats" or "link-fixtures" or "link-fixtures-dry" or "match-predictions"
         or "set-password" or "validate-scoring" or "set-prediction" or "preview-simple"
         or "recalc-all" or "report" or "setup-audit" or "audit-log" or "user-predictions" or "logins"
-        or "export-predictions")
+        or "export-predictions" or "set-prediction-all" or "add-participant" or "copy-predictions")
 {
     await using var cliScope = app.Services.CreateAsyncScope();
     var sp = cliScope.ServiceProvider;
 
     switch (args[0])
     {
+        case "copy-predictions":
+        {
+            var ctxC = sp.GetRequiredService<AppDbContext>();
+            if (args.Length < 4) { Console.WriteLine("Uso: copy-predictions <email-ou-nome> <bolaoOrigem> <bolaoDestino>"); break; }
+            var usC = await ctxC.Users.Where(u => u.Email == args[1] || u.Name == args[1]).ToListAsync();
+            if (usC.Count != 1) { Console.WriteLine($"Usuário '{args[1]}': {usC.Count} encontrado(s) — use o email."); break; }
+            var uidC = usC[0].Id;
+
+            // Origem: entre os bolões que casam o nome, o que o usuário PARTICIPA (resolve nome duplicado).
+            var origCandidatos = await ctxC.Pools.Where(p => p.Name == args[2] || p.InviteCode == args[2]).ToListAsync();
+            var origViaPart = new List<BolaoCopa.Domain.Entities.Pool>();
+            foreach (var p in origCandidatos)
+                if (await ctxC.PoolParticipants.AnyAsync(pp => pp.PoolId == p.Id && pp.UserId == uidC)
+                    || await ctxC.Predictions.AnyAsync(pr => pr.PoolId == p.Id && pr.UserId == uidC))
+                    origViaPart.Add(p);
+            if (origViaPart.Count != 1) { Console.WriteLine($"Origem '{args[2]}': {origViaPart.Count} bolão(ões) com esse usuário — ambíguo."); break; }
+            var origem = origViaPart[0];
+
+            var destino = await ctxC.Pools.FirstOrDefaultAsync(p => p.Name == args[3] || p.InviteCode == args[3]);
+            if (destino is null) { Console.WriteLine($"Destino '{args[3]}' não encontrado."); break; }
+
+            // Garante participação no destino
+            var partC = await ctxC.PoolParticipants.FirstOrDefaultAsync(pp => pp.PoolId == destino.Id && pp.UserId == uidC);
+            if (partC is null)
+            {
+                partC = new BolaoCopa.Domain.Entities.PoolParticipant { Id = Guid.NewGuid(), PoolId = destino.Id, UserId = uidC, JoinedAt = DateTime.UtcNow };
+                await ctxC.PoolParticipants.AddAsync(partC);
+            }
+
+            var srcPreds = await ctxC.Predictions.Where(p => p.PoolId == origem.Id && p.UserId == uidC).ToListAsync();
+            var dstPreds = await ctxC.Predictions.Where(p => p.PoolId == destino.Id && p.UserId == uidC).ToListAsync();
+            var dstByMatch = dstPreds.ToDictionary(p => p.MatchId);
+            int criados = 0, atualizados = 0;
+            foreach (var s in srcPreds)
+            {
+                if (dstByMatch.TryGetValue(s.MatchId, out var d))
+                {
+                    if (d.HomeScorePrediction != s.HomeScorePrediction || d.AwayScorePrediction != s.AwayScorePrediction)
+                    {
+                        d.HomeScorePrediction = s.HomeScorePrediction;
+                        d.AwayScorePrediction = s.AwayScorePrediction;
+                        d.UpdatedAt = DateTime.UtcNow;
+                        atualizados++;
+                    }
+                }
+                else
+                {
+                    await ctxC.Predictions.AddAsync(new BolaoCopa.Domain.Entities.Prediction
+                    {
+                        Id = Guid.NewGuid(), PoolId = destino.Id, UserId = uidC, MatchId = s.MatchId,
+                        HomeScorePrediction = s.HomeScorePrediction, AwayScorePrediction = s.AwayScorePrediction
+                    });
+                    criados++;
+                }
+            }
+            await ctxC.SaveChangesAsync();
+
+            // Repontua só o usuário no destino (jogos finalizados)
+            var cfgC = new BolaoCopa.Application.DTOs.ScoringConfigDto(
+                destino.PointsExactScore, destino.PointsCorrectResult, destino.PointsChampion,
+                destino.PointsRunnerUp, destino.PointsThirdPlace, destino.PointsGroupQualifier);
+            var scoringC = sp.GetRequiredService<IScoringService>();
+            var finC = await ctxC.Matches.Where(m => m.IsFinished).ToDictionaryAsync(m => m.Id);
+            var nowPreds = await ctxC.Predictions.Where(p => p.PoolId == destino.Id && p.UserId == uidC && finC.Keys.Contains(p.MatchId)).ToListAsync();
+            int totC = 0, exC = 0, ceC = 0;
+            foreach (var pr in nowPreds)
+            {
+                var m = finC[pr.MatchId];
+                var pts = scoringC.CalculateMatchPredictionPoints(pr, m, cfgC);
+                pr.PointsEarned = pts; totC += pts;
+                if (pr.HomeScorePrediction == m.HomeScore && pr.AwayScorePrediction == m.AwayScore) exC++;
+                else if (pts > 0) ceC++;
+            }
+            partC.TotalPoints = totC; partC.ExactScores = exC; partC.CorrectResults = ceC;
+            await ctxC.SaveChangesAsync();
+
+            Console.WriteLine($"[copy-predictions] {usC[0].Name}: {origem.Name} → {destino.Name} | " +
+                $"{criados} criados, {atualizados} atualizados | novos pontos em {destino.Name}: {totC} ({exC} exatos, {ceC} vencedor)");
+            break;
+        }
+
+        case "add-participant":
+        {
+            var ctxAp = sp.GetRequiredService<AppDbContext>();
+            if (args.Length < 3) { Console.WriteLine("Uso: add-participant <email-ou-nome> <bolão>"); break; }
+            var usAp = await ctxAp.Users.Where(u => u.Email == args[1] || u.Name == args[1]).ToListAsync();
+            if (usAp.Count != 1) { Console.WriteLine($"Usuário '{args[1]}': {usAp.Count} encontrado(s) — use o email."); break; }
+            var poolAp = await ctxAp.Pools.FirstOrDefaultAsync(p => p.Name == args[2] || p.InviteCode == args[2]);
+            if (poolAp is null) { Console.WriteLine($"Bolão '{args[2]}' não encontrado."); break; }
+
+            var part = await ctxAp.PoolParticipants.FirstOrDefaultAsync(pp => pp.PoolId == poolAp.Id && pp.UserId == usAp[0].Id);
+            var jaEra = part is not null;
+            if (part is null)
+            {
+                part = new BolaoCopa.Domain.Entities.PoolParticipant
+                { Id = Guid.NewGuid(), PoolId = poolAp.Id, UserId = usAp[0].Id, JoinedAt = DateTime.UtcNow };
+                await ctxAp.PoolParticipants.AddAsync(part);
+            }
+
+            // Pontua SÓ os palpites do Andre nesse bolão (não mexe nos outros participantes).
+            var cfgAp = new BolaoCopa.Application.DTOs.ScoringConfigDto(
+                poolAp.PointsExactScore, poolAp.PointsCorrectResult, poolAp.PointsChampion,
+                poolAp.PointsRunnerUp, poolAp.PointsThirdPlace, poolAp.PointsGroupQualifier);
+            var scoringAp = sp.GetRequiredService<IScoringService>();
+            var finishedAp = await ctxAp.Matches.Where(m => m.IsFinished).ToDictionaryAsync(m => m.Id);
+            var predsAp = await ctxAp.Predictions
+                .Where(p => p.PoolId == poolAp.Id && p.UserId == usAp[0].Id && finishedAp.Keys.Contains(p.MatchId))
+                .ToListAsync();
+
+            int totalAp = 0, exatosAp = 0, certosAp = 0;
+            foreach (var pr in predsAp)
+            {
+                var m = finishedAp[pr.MatchId];
+                var pts = scoringAp.CalculateMatchPredictionPoints(pr, m, cfgAp);
+                pr.PointsEarned = pts;
+                totalAp += pts;
+                if (pr.HomeScorePrediction == m.HomeScore && pr.AwayScorePrediction == m.AwayScore) exatosAp++;
+                else if (pts > 0) certosAp++;
+            }
+            part.TotalPoints = totalAp;
+            part.ExactScores = exatosAp;
+            part.CorrectResults = certosAp;
+            await ctxAp.SaveChangesAsync();
+
+            var totPredsAp = await ctxAp.Predictions.CountAsync(p => p.PoolId == poolAp.Id && p.UserId == usAp[0].Id);
+            Console.WriteLine($"[add-participant] {usAp[0].Name} {(jaEra ? "já era participante" : "ADICIONADO")} em {poolAp.Name}. " +
+                $"Palpites no bolão: {totPredsAp} | pontos: {totalAp} ({exatosAp} exatos, {certosAp} no vencedor)");
+            break;
+        }
+
+        case "set-prediction-all":
+        {
+            var ctxA = sp.GetRequiredService<AppDbContext>();
+            if (args.Length < 6) { Console.WriteLine("Uso: set-prediction-all <email-ou-nome> <CASA> <FORA> <golsCasa> <golsFora>"); break; }
+            var usA = await ctxA.Users.Where(u => u.Email == args[1] || u.Name == args[1]).ToListAsync();
+            if (usA.Count != 1) { Console.WriteLine($"Usuário '{args[1]}': {usA.Count} encontrado(s) — use o email."); break; }
+            var homeA = await ctxA.Teams.FirstOrDefaultAsync(t => t.Code == args[2]);
+            var awayA = await ctxA.Teams.FirstOrDefaultAsync(t => t.Code == args[3]);
+            if (homeA is null || awayA is null) { Console.WriteLine("Código de seleção inválido."); break; }
+            var matchA = await ctxA.Matches.FirstOrDefaultAsync(m => m.HomeTeamId == homeA.Id && m.AwayTeamId == awayA.Id);
+            if (matchA is null) { Console.WriteLine($"Jogo {args[2]}×{args[3]} não encontrado."); break; }
+            if (matchA.IsFinished) { Console.WriteLine($"Jogo {args[2]}×{args[3]} JÁ ENCERROU — não vou alterar palpite de jogo finalizado."); break; }
+            var hsA = int.Parse(args[4]); var asA = int.Parse(args[5]);
+
+            // Todos os bolões em que o usuário participa
+            var poolIdsA = await ctxA.PoolParticipants.Where(pp => pp.UserId == usA[0].Id).Select(pp => pp.PoolId).ToListAsync();
+            var poolNamesA = await ctxA.Pools.Where(p => poolIdsA.Contains(p.Id)).ToDictionaryAsync(p => p.Id, p => p.Name);
+
+            int novos = 0, atualizados = 0;
+            foreach (var pid in poolIdsA)
+            {
+                var pr = await ctxA.Predictions.FirstOrDefaultAsync(p => p.PoolId == pid && p.UserId == usA[0].Id && p.MatchId == matchA.Id);
+                if (pr is null)
+                {
+                    await ctxA.Predictions.AddAsync(new BolaoCopa.Domain.Entities.Prediction
+                    {
+                        Id = Guid.NewGuid(), PoolId = pid, UserId = usA[0].Id, MatchId = matchA.Id,
+                        HomeScorePrediction = hsA, AwayScorePrediction = asA
+                    });
+                    novos++;
+                }
+                else { pr.HomeScorePrediction = hsA; pr.AwayScorePrediction = asA; pr.UpdatedAt = DateTime.UtcNow; atualizados++; }
+                Console.WriteLine($"  [{poolNamesA.GetValueOrDefault(pid)}] {args[2]} {hsA}×{asA} {args[3]}");
+            }
+            await ctxA.SaveChangesAsync();
+            Console.WriteLine($"[set-prediction-all] {usA[0].Name} | {args[2]} {hsA}×{asA} {args[3]} | {poolIdsA.Count} bolão(ões) ({novos} criados, {atualizados} atualizados)");
+            break;
+        }
+
         case "set-prediction":
         {
             if (args.Length < 7)
