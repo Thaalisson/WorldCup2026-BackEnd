@@ -42,7 +42,16 @@ public class GroupPredictionsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Upsert([FromBody] UpsertGroupPredictionRequest request)
     {
-        // Bloqueio por início do grupo REMOVIDO a pedido do dono do bolão (reabertura).
+        var allMatches = await _matches.GetAllWithTeamsAsync();
+        var firstKickoff = allMatches
+            .Where(m => m.GroupName == request.GroupName)
+            .Select(m => m.KickoffAt)
+            .OrderBy(k => k)
+            .FirstOrDefault();
+
+        if (firstKickoff != default && firstKickoff.AddHours(-1) <= DateTime.UtcNow)
+            return BadRequest($"Palpites do Grupo {request.GroupName} bloqueados — jogo começa em menos de 1h.");
+
         var userId = GetUserId();
         if (!await _pools.IsParticipantAsync(request.PoolId, userId)) return Forbid();
 
@@ -88,8 +97,22 @@ public class GroupPredictionsController : ControllerBase
         var userId = GetUserId();
         if (!await _pools.IsParticipantAsync(request.PoolId, userId)) return Forbid();
 
-        // Bloqueio por início do grupo REMOVIDO a pedido do dono do bolão (reabertura).
-        var unlockedPicks = request.Picks.ToList();
+        var now = DateTime.UtcNow;
+        var lockCutoff = now.AddHours(1);
+
+        var allMatches = await _matches.GetAllWithTeamsAsync();
+        var groupFirstKickoff = allMatches
+            .Where(m => m.GroupName != null)
+            .GroupBy(m => m.GroupName!)
+            .ToDictionary(g => g.Key, g => g.Min(m => m.KickoffAt));
+
+        var unlockedPicks = request.Picks
+            .Where(p =>
+                !groupFirstKickoff.TryGetValue(p.GroupName, out var first) || first > lockCutoff)
+            .ToList();
+
+        if (unlockedPicks.Count == 0)
+            return BadRequest("Todos os grupos estão bloqueados.");
 
         var existing = await _repo.GetByUserAndPoolAsync(userId, request.PoolId);
         var existingMap = existing.ToDictionary(x => x.GroupName);

@@ -159,13 +159,59 @@ if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sy
         or "db-stats" or "link-fixtures" or "link-fixtures-dry" or "match-predictions"
         or "set-password" or "validate-scoring" or "set-prediction" or "preview-simple"
         or "recalc-all" or "report" or "setup-audit" or "audit-log" or "user-predictions" or "logins"
-        or "export-predictions" or "set-prediction-all" or "add-participant" or "copy-predictions")
+        or "export-predictions" or "set-prediction-all" or "add-participant" or "copy-predictions"
+        or "copy-group-predictions")
 {
     await using var cliScope = app.Services.CreateAsyncScope();
     var sp = cliScope.ServiceProvider;
 
     switch (args[0])
     {
+        case "copy-group-predictions":
+        {
+            var ctxG = sp.GetRequiredService<AppDbContext>();
+            if (args.Length < 3) { Console.WriteLine("Uso: copy-group-predictions <origem> <destino> [bolão=BOLAO_BRP2026]"); break; }
+            var fromU = await ctxG.Users.Where(u => u.Email == args[1] || u.Name == args[1]).ToListAsync();
+            var toU = await ctxG.Users.Where(u => u.Email == args[2] || u.Name == args[2]).ToListAsync();
+            if (fromU.Count != 1) { Console.WriteLine($"Origem '{args[1]}': {fromU.Count} encontrado(s) — use email."); break; }
+            if (toU.Count != 1) { Console.WriteLine($"Destino '{args[2]}': {toU.Count} encontrado(s) — use email."); break; }
+            var poolNameG = args.Length > 3 ? args[3] : "BOLAO_BRP2026";
+            var poolG = await ctxG.Pools.FirstOrDefaultAsync(p => p.Name == poolNameG || p.InviteCode == poolNameG);
+            if (poolG is null) { Console.WriteLine($"Bolão '{poolNameG}' não encontrado."); break; }
+
+            var teamsG = await ctxG.Teams.ToDictionaryAsync(t => t.Id, t => t.Code);
+            var src = await ctxG.GroupPredictions.Where(g => g.PoolId == poolG.Id && g.UserId == fromU[0].Id).ToListAsync();
+            if (src.Count == 0) { Console.WriteLine($"{fromU[0].Name} não tem palpites de grupo em {poolG.Name}."); break; }
+            var dst = (await ctxG.GroupPredictions.Where(g => g.PoolId == poolG.Id && g.UserId == toU[0].Id).ToListAsync())
+                .ToDictionary(g => g.GroupName);
+
+            int criados = 0, atualizados = 0;
+            foreach (var s in src.OrderBy(g => g.GroupName))
+            {
+                if (dst.TryGetValue(s.GroupName, out var d))
+                {
+                    d.FirstPlaceTeamId = s.FirstPlaceTeamId;
+                    d.SecondPlaceTeamId = s.SecondPlaceTeamId;
+                    d.PointsEarned = s.PointsEarned;
+                    atualizados++;
+                }
+                else
+                {
+                    await ctxG.GroupPredictions.AddAsync(new BolaoCopa.Domain.Entities.GroupPrediction
+                    {
+                        Id = Guid.NewGuid(), PoolId = poolG.Id, UserId = toU[0].Id, GroupName = s.GroupName,
+                        FirstPlaceTeamId = s.FirstPlaceTeamId, SecondPlaceTeamId = s.SecondPlaceTeamId,
+                        PointsEarned = s.PointsEarned
+                    });
+                    criados++;
+                }
+                Console.WriteLine($"  Grupo {s.GroupName}: 1º {teamsG.GetValueOrDefault(s.FirstPlaceTeamId, "?")} · 2º {teamsG.GetValueOrDefault(s.SecondPlaceTeamId, "?")}");
+            }
+            await ctxG.SaveChangesAsync();
+            Console.WriteLine($"[copy-group-predictions] {fromU[0].Name} → {toU[0].Name} em {poolG.Name}: {criados} criados, {atualizados} atualizados");
+            break;
+        }
+
         case "copy-predictions":
         {
             var ctxC = sp.GetRequiredService<AppDbContext>();
