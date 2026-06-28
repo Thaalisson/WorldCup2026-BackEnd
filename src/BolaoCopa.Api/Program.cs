@@ -160,7 +160,7 @@ if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sy
         or "set-password" or "validate-scoring" or "set-prediction" or "preview-simple"
         or "recalc-all" or "report" or "setup-audit" or "audit-log" or "user-predictions" or "logins"
         or "export-predictions" or "set-prediction-all" or "add-participant" or "copy-predictions"
-        or "copy-group-predictions" or "score-groups")
+        or "copy-group-predictions" or "score-groups" or "group-bonus")
 {
     await using var cliScope = app.Services.CreateAsyncScope();
     var sp = cliScope.ServiceProvider;
@@ -250,6 +250,36 @@ if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sy
                 totalPoolsSg++;
             }
             Console.WriteLine($"\n[score-groups] Concluído: {totalPoolsSg} bolão(ões) pontuados.");
+            break;
+        }
+
+        case "group-bonus":
+        {
+            // group-bonus <bolão> <pts> <user1> [user2 ...]
+            // Adiciona <pts> ao TotalPoints de cada usuário no bolão (para compensar quem esqueceu de palpitar nos grupos).
+            // Uso: dotnet run -- group-bonus BOLAO_BRP2026 54 "Andre de Martini" Renan Brenno israel
+            if (args.Length < 4) { Console.WriteLine("Uso: group-bonus <bolão> <pts> <user1> [user2 ...]"); break; }
+            var ctxGb = sp.GetRequiredService<AppDbContext>();
+            var poolGb = await ctxGb.Pools.FirstOrDefaultAsync(p => p.Name == args[1] || p.InviteCode == args[1]);
+            if (poolGb is null) { Console.WriteLine($"Bolão '{args[1]}' não encontrado."); break; }
+            if (!int.TryParse(args[2], out var bonusPts) || bonusPts < 0) { Console.WriteLine("Pts deve ser um número positivo."); break; }
+
+            var userNamesGb = args.Skip(3).ToList();
+            int aplicados = 0;
+            foreach (var nameOrEmail in userNamesGb)
+            {
+                var us = await ctxGb.Users.Where(u => u.Email == nameOrEmail || u.Name == nameOrEmail).ToListAsync();
+                if (us.Count != 1) { Console.WriteLine($"  '{nameOrEmail}': {us.Count} usuário(s) encontrado(s) — ignorado."); continue; }
+
+                var part = await ctxGb.PoolParticipants.FirstOrDefaultAsync(pp => pp.PoolId == poolGb.Id && pp.UserId == us[0].Id);
+                if (part is null) { Console.WriteLine($"  {us[0].Name}: não é participante de {poolGb.Name} — ignorado."); continue; }
+
+                part.TotalPoints += bonusPts;
+                Console.WriteLine($"  {us[0].Name}: +{bonusPts} pts → total agora = {part.TotalPoints}");
+                aplicados++;
+            }
+            await ctxGb.SaveChangesAsync();
+            Console.WriteLine($"[group-bonus] {aplicados}/{userNamesGb.Count} usuário(s) atualizado(s) em {poolGb.Name}.");
             break;
         }
 
