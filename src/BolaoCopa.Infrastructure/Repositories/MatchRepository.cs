@@ -32,7 +32,8 @@ public class MatchRepository : IMatchRepository
             r.m.GroupName,
             r.m.HomeScore,
             r.m.AwayScore,
-            r.m.IsFinished
+            r.m.IsFinished,
+            r.m.ApiFootballFixtureId
         )).ToList();
     }
 

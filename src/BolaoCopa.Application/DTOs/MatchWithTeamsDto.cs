@@ -11,5 +11,6 @@ public record MatchWithTeamsDto(
     string? GroupName,
     int? HomeScore,
     int? AwayScore,
-    bool IsFinished
+    bool IsFinished,
+    int? ApiFootballFixtureId
 );
