@@ -7,4 +7,7 @@ public interface IMatchSyncService
 
     /// <summary>Busca resultados do dia e atualiza placares + ranking. Chamado pelo job Hangfire.</summary>
     Task SyncResultsAsync();
+
+    /// <summary>Atualiza HomeTeamId/AwayTeamId de jogos existentes quando a API resolve times que estavam TBD.</summary>
+    Task<int> SyncFixtureTeamsAsync();
 }

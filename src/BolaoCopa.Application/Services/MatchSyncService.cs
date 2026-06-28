@@ -83,6 +83,32 @@ public class MatchSyncService : IMatchSyncService
         }
     }
 
+    public async Task<int> SyncFixtureTeamsAsync()
+    {
+        var fixtures = await _apiClient.GetAllFixturesAsync();
+        int updated = 0;
+
+        foreach (var f in fixtures)
+        {
+            if (f.HomeTeamId == 0 || f.AwayTeamId == 0) continue;
+
+            var match = await _matches.GetByApiFixtureIdAsync(f.FixtureId);
+            if (match is null) continue;
+
+            var homeTeam = await EnsureTeamAsync(f.HomeTeamId, f.HomeTeamName, f.HomeTeamCode);
+            var awayTeam = await EnsureTeamAsync(f.AwayTeamId, f.AwayTeamName, f.AwayTeamCode);
+
+            if (match.HomeTeamId == homeTeam.Id && match.AwayTeamId == awayTeam.Id) continue;
+
+            match.HomeTeamId = homeTeam.Id;
+            match.AwayTeamId = awayTeam.Id;
+            await _matches.UpdateAsync(match);
+            updated++;
+        }
+
+        return updated;
+    }
+
     private async Task<Team> EnsureTeamAsync(int apiTeamId, string name, string code = "")
     {
         var team = await _teams.GetByApiTeamIdAsync(apiTeamId);

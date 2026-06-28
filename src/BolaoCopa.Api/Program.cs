@@ -160,7 +160,7 @@ if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sy
         or "set-password" or "validate-scoring" or "set-prediction" or "preview-simple"
         or "recalc-all" or "report" or "setup-audit" or "audit-log" or "user-predictions" or "logins"
         or "export-predictions" or "set-prediction-all" or "add-participant" or "copy-predictions"
-        or "copy-group-predictions" or "score-groups" or "group-bonus")
+        or "copy-group-predictions" or "score-groups" or "group-bonus" or "sync-fixtures")
 {
     await using var cliScope = app.Services.CreateAsyncScope();
     var sp = cliScope.ServiceProvider;
@@ -810,6 +810,13 @@ if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sy
             await sp.GetRequiredService<IMatchSyncService>().SyncResultsAsync();
             Console.WriteLine("[sync-results] Placares sincronizados e ranking recalculado.");
             break;
+
+        case "sync-fixtures":
+        {
+            var sfCount = await sp.GetRequiredService<IMatchSyncService>().SyncFixtureTeamsAsync();
+            Console.WriteLine($"[sync-fixtures] {sfCount} jogo(s) com times atualizados da API.");
+            break;
+        }
     }
 
     return;
