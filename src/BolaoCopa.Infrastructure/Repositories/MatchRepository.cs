@@ -63,7 +63,7 @@ public class MatchRepository : IMatchRepository
     private static string StageName(TournamentStage s) => s switch
     {
         TournamentStage.GroupStage   => "Fase de grupos",
-        TournamentStage.RoundOf32    => "Round of 32",
+        TournamentStage.RoundOf32    => "Rodada de 32",
         TournamentStage.RoundOf16    => "Oitavas de final",
         TournamentStage.QuarterFinal => "Quartas de final",
         TournamentStage.SemiFinal    => "Semifinal",

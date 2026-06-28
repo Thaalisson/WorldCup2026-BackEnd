@@ -160,7 +160,7 @@ if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sy
         or "set-password" or "validate-scoring" or "set-prediction" or "preview-simple"
         or "recalc-all" or "report" or "setup-audit" or "audit-log" or "user-predictions" or "logins"
         or "export-predictions" or "set-prediction-all" or "add-participant" or "copy-predictions"
-        or "copy-group-predictions")
+        or "copy-group-predictions" or "score-groups")
 {
     await using var cliScope = app.Services.CreateAsyncScope();
     var sp = cliScope.ServiceProvider;
@@ -209,6 +209,47 @@ if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sy
             }
             await ctxG.SaveChangesAsync();
             Console.WriteLine($"[copy-group-predictions] {fromU[0].Name} → {toU[0].Name} em {poolG.Name}: {criados} criados, {atualizados} atualizados");
+            break;
+        }
+
+        case "score-groups":
+        {
+            // Pontua palpites de classificação de grupo para todos os bolões.
+            // Regra: qualifierPts (padrão=3) por cada time que o usuário previu e que realmente ficou no top-2 do grupo.
+            // Desempate da tabela: pontos → saldo de gols → gols marcados (igual à tabela oficial).
+            var ctxSg = sp.GetRequiredService<AppDbContext>();
+            var rankingSg = sp.GetRequiredService<IRankingService>();
+            var poolsSg = await ctxSg.Pools.OrderBy(p => p.Name).ToListAsync();
+            var userNamesSg = await ctxSg.Users.ToDictionaryAsync(u => u.Id, u => u.Name);
+
+            int totalPoolsSg = 0;
+            foreach (var poolSg in poolsSg)
+            {
+                await rankingSg.ScoreGroupPredictionsForPoolAsync(poolSg.Id);
+
+                // Relatório por bolão
+                var groupPredsSg = await ctxSg.GroupPredictions
+                    .Where(gp => gp.PoolId == poolSg.Id && gp.PointsEarned > 0)
+                    .ToListAsync();
+                var byUserSg = groupPredsSg
+                    .GroupBy(gp => gp.UserId)
+                    .ToDictionary(g => g.Key, g => g.Sum(gp => gp.PointsEarned));
+
+                var participantsSg = await ctxSg.PoolParticipants
+                    .Where(pp => pp.PoolId == poolSg.Id)
+                    .OrderByDescending(pp => pp.TotalPoints)
+                    .ToListAsync();
+
+                Console.WriteLine($"\n── {poolSg.Name} (qualifierPts={poolSg.PointsGroupQualifier}) ──");
+                foreach (var p in participantsSg)
+                {
+                    var name = userNamesSg.GetValueOrDefault(p.UserId, "?");
+                    var gPts = byUserSg.GetValueOrDefault(p.UserId, 0);
+                    Console.WriteLine($"  {name,-25} grupos={gPts,3} pts | total={p.TotalPoints,4} pts");
+                }
+                totalPoolsSg++;
+            }
+            Console.WriteLine($"\n[score-groups] Concluído: {totalPoolsSg} bolão(ões) pontuados.");
             break;
         }
 

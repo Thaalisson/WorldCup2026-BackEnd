@@ -192,19 +192,23 @@ public class RankingService : IRankingService
             var finishedMatches = await _matches.GetFinishedMatchesAsync();
             var groupMatches = finishedMatches.Where(m => m.GroupName is not null).ToList();
 
-            var standing = new Dictionary<Guid, (string Group, int Points)>();
+            // Calcula a tabela com pontos + saldo de gols + gols marcados (mesmos critérios do GetGroupStandings)
+            var standing = new Dictionary<Guid, (string Group, int Points, int GoalDiff, int GoalsFor)>();
             foreach (var m in groupMatches)
             {
-                if (!standing.ContainsKey(m.HomeTeamId)) standing[m.HomeTeamId] = (m.GroupName!, 0);
-                if (!standing.ContainsKey(m.AwayTeamId)) standing[m.AwayTeamId] = (m.GroupName!, 0);
+                int hg = m.HomeScore ?? 0, ag = m.AwayScore ?? 0;
+                if (!standing.ContainsKey(m.HomeTeamId)) standing[m.HomeTeamId] = (m.GroupName!, 0, 0, 0);
+                if (!standing.ContainsKey(m.AwayTeamId)) standing[m.AwayTeamId] = (m.GroupName!, 0, 0, 0);
 
                 int hp = 0, ap = 0;
-                if (m.HomeScore > m.AwayScore)      { hp = 3; }
-                else if (m.HomeScore == m.AwayScore) { hp = 1; ap = 1; }
-                else                                 { ap = 3; }
+                if (hg > ag)       { hp = 3; }
+                else if (hg == ag) { hp = 1; ap = 1; }
+                else               { ap = 3; }
 
-                standing[m.HomeTeamId] = (standing[m.HomeTeamId].Group, standing[m.HomeTeamId].Points + hp);
-                standing[m.AwayTeamId] = (standing[m.AwayTeamId].Group, standing[m.AwayTeamId].Points + ap);
+                var hs = standing[m.HomeTeamId];
+                standing[m.HomeTeamId] = (hs.Group, hs.Points + hp, hs.GoalDiff + hg - ag, hs.GoalsFor + hg);
+                var as_ = standing[m.AwayTeamId];
+                standing[m.AwayTeamId] = (as_.Group, as_.Points + ap, as_.GoalDiff + ag - hg, as_.GoalsFor + ag);
             }
 
             var qualifiers = standing
@@ -212,6 +216,8 @@ public class RankingService : IRankingService
                 .ToDictionary(
                     g => g.Key,
                     g => g.OrderByDescending(kv => kv.Value.Points)
+                           .ThenByDescending(kv => kv.Value.GoalDiff)
+                           .ThenByDescending(kv => kv.Value.GoalsFor)
                            .Take(2)
                            .Select(kv => kv.Key)
                            .ToHashSet());
