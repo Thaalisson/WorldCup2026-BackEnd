@@ -160,7 +160,8 @@ if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sy
         or "set-password" or "validate-scoring" or "set-prediction" or "preview-simple"
         or "recalc-all" or "report" or "setup-audit" or "audit-log" or "user-predictions" or "logins"
         or "export-predictions" or "set-prediction-all" or "add-participant" or "copy-predictions"
-        or "copy-group-predictions" or "score-groups" or "group-bonus" or "sync-fixtures")
+        or "copy-group-predictions" or "score-groups" or "group-bonus" or "sync-fixtures"
+        or "set-champion" or "check-champion" or "check-group-preds" or "ranking-history" or "missing-preds")
 {
     await using var cliScope = app.Services.CreateAsyncScope();
     var sp = cliScope.ServiceProvider;
@@ -280,6 +281,94 @@ if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sy
             }
             await ctxGb.SaveChangesAsync();
             Console.WriteLine($"[group-bonus] {aplicados}/{userNamesGb.Count} usuário(s) atualizado(s) em {poolGb.Name}.");
+            break;
+        }
+
+        case "set-champion":
+        {
+            // set-champion <bolão> <usuario> <1°cod> <2°cod> <3°cod>
+            // Ex.: dotnet run -- set-champion BRP_2026 "Lucas Rittes" BRA FRA ARG
+            if (args.Length < 6) { Console.WriteLine("Uso: set-champion <bolão> <usuario> <1°time> <2°time> <3°time>"); break; }
+            var ctxSc = sp.GetRequiredService<AppDbContext>();
+            var poolSc = await ctxSc.Pools.FirstOrDefaultAsync(p => p.Name == args[1] || p.InviteCode == args[1]);
+            if (poolSc is null) { Console.WriteLine($"Bolão '{args[1]}' não encontrado."); break; }
+
+            var usersSc = await ctxSc.Users.Where(u => u.Email == args[2] || u.Name == args[2]).ToListAsync();
+            if (usersSc.Count != 1) { Console.WriteLine($"Usuário '{args[2]}': {usersSc.Count} encontrado(s)."); break; }
+            var userSc = usersSc[0];
+
+            var t1 = await ctxSc.Teams.FirstOrDefaultAsync(t => t.Code == args[3]);
+            var t2 = await ctxSc.Teams.FirstOrDefaultAsync(t => t.Code == args[4]);
+            var t3 = await ctxSc.Teams.FirstOrDefaultAsync(t => t.Code == args[5]);
+            if (t1 is null) { Console.WriteLine($"Time '{args[3]}' não encontrado."); break; }
+            if (t2 is null) { Console.WriteLine($"Time '{args[4]}' não encontrado."); break; }
+            if (t3 is null) { Console.WriteLine($"Time '{args[5]}' não encontrado."); break; }
+
+            var existing = await ctxSc.ChampionPredictions
+                .FirstOrDefaultAsync(cp => cp.PoolId == poolSc.Id && cp.UserId == userSc.Id);
+            if (existing is not null)
+            {
+                existing.ChampionTeamId  = t1.Id;
+                existing.RunnerUpTeamId  = t2.Id;
+                existing.ThirdPlaceTeamId = t3.Id;
+                ctxSc.ChampionPredictions.Update(existing);
+            }
+            else
+            {
+                await ctxSc.ChampionPredictions.AddAsync(new BolaoCopa.Domain.Entities.ChampionPrediction
+                {
+                    Id = Guid.NewGuid(),
+                    PoolId = poolSc.Id,
+                    UserId = userSc.Id,
+                    ChampionTeamId  = t1.Id,
+                    RunnerUpTeamId  = t2.Id,
+                    ThirdPlaceTeamId = t3.Id,
+                });
+            }
+            await ctxSc.SaveChangesAsync();
+            Console.WriteLine($"[set-champion] {userSc.Name} em {poolSc.Name}: 1° {t1.Name} · 2° {t2.Name} · 3° {t3.Name}");
+            break;
+        }
+
+        case "check-champion":
+        {
+            // check-champion <bolão>  → mostra quem preencheu e quem não preencheu palpite de campeão
+            if (args.Length < 2) { Console.WriteLine("Uso: check-champion <bolão>"); break; }
+            var ctxCh = sp.GetRequiredService<AppDbContext>();
+            var poolCh = await ctxCh.Pools.FirstOrDefaultAsync(p => p.Name == args[1] || p.InviteCode == args[1]);
+            if (poolCh is null) { Console.WriteLine($"Bolão '{args[1]}' não encontrado."); break; }
+
+            var parts = await (
+                from pp in ctxCh.PoolParticipants
+                join u in ctxCh.Users on pp.UserId equals u.Id
+                where pp.PoolId == poolCh.Id
+                select new { u.Id, u.Name }
+            ).ToListAsync();
+
+            var picks = await ctxCh.ChampionPredictions
+                .Where(cp => cp.PoolId == poolCh.Id)
+                .ToListAsync();
+
+            var teamIds = picks.SelectMany(p => new[] { p.ChampionTeamId, p.RunnerUpTeamId, p.ThirdPlaceTeamId })
+                               .Where(id => id != null).Select(id => id!.Value).Distinct().ToList();
+            var teams = await ctxCh.Teams.Where(t => teamIds.Contains(t.Id)).ToDictionaryAsync(t => t.Id, t => t.Name);
+
+            var pickByUser = picks.ToDictionary(p => p.UserId);
+
+            Console.WriteLine($"\n[check-champion] {poolCh.Name} — {parts.Count} participante(s)\n");
+            Console.WriteLine("✅ PREENCHERAM:");
+            foreach (var p in parts.Where(p => pickByUser.ContainsKey(p.Id)))
+            {
+                var pick = pickByUser[p.Id];
+                var t1 = pick.ChampionTeamId  != Guid.Empty ? teams.GetValueOrDefault(pick.ChampionTeamId,  "?") : "—";
+                var t2 = pick.RunnerUpTeamId.HasValue       ? teams.GetValueOrDefault(pick.RunnerUpTeamId.Value,  "?") : "—";
+                var t3 = pick.ThirdPlaceTeamId.HasValue     ? teams.GetValueOrDefault(pick.ThirdPlaceTeamId.Value, "?") : "—";
+                Console.WriteLine($"  {p.Name}: 1°{t1} · 2°{t2} · 3°{t3}");
+            }
+            Console.WriteLine("\n❌ NÃO PREENCHERAM:");
+            foreach (var p in parts.Where(p => !pickByUser.ContainsKey(p.Id)))
+                Console.WriteLine($"  {p.Name}");
+            Console.WriteLine();
             break;
         }
 
@@ -805,6 +894,172 @@ if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sy
             var count = await sp.GetRequiredService<IMatchSyncService>().ImportFixturesAsync();
             Console.WriteLine($"[import-fixtures] {count} jogo(s) real(is) importado(s).");
             break;
+
+        case "missing-preds":
+        {
+            // Uso: missing-preds <bolao> <nome-parcial>
+            if (args.Length < 3) { Console.WriteLine("Uso: missing-preds <bolao> <nome>"); break; }
+            var mpCtx = sp.GetRequiredService<AppDbContext>();
+            var mpPool = await mpCtx.Pools.FirstOrDefaultAsync(p => p.Name == args[1] || p.InviteCode == args[1]);
+            if (mpPool is null) { Console.WriteLine($"Bolão '{args[1]}' não encontrado."); break; }
+            var mpUsers = await mpCtx.Users.Where(u => u.Name.ToLower().Contains(args[2].ToLower())).ToListAsync();
+            if (mpUsers.Count == 0) { Console.WriteLine($"Usuário '{args[2]}' não encontrado."); break; }
+            if (mpUsers.Count > 1) { Console.WriteLine($"Mais de um: {string.Join(", ", mpUsers.Select(u => u.Name))}"); break; }
+            var mpUser = mpUsers[0];
+
+            var finishedMatches = await (
+                from m in mpCtx.Matches
+                join ht in mpCtx.Teams on m.HomeTeamId equals ht.Id
+                join at in mpCtx.Teams on m.AwayTeamId equals at.Id
+                where m.IsFinished
+                orderby m.KickoffAt
+                select new { m.Id, m.KickoffAt, m.Stage, HomeCode = ht.Code, AwayCode = at.Code, m.HomeScore, m.AwayScore }
+            ).ToListAsync();
+
+            var userPredMatchIds = (await mpCtx.Predictions
+                .Where(p => p.PoolId == mpPool.Id && p.UserId == mpUser.Id)
+                .Select(p => p.MatchId).ToListAsync()).ToHashSet();
+
+            var missing = finishedMatches.Where(m => !userPredMatchIds.Contains(m.Id)).ToList();
+            Console.WriteLine($"\n[missing-preds] {mpUser.Name} | {mpPool.Name} | {missing.Count} jogo(s) sem palpite de {finishedMatches.Count} finalizados:");
+            foreach (var m in missing) {
+                var stage = m.Stage switch {
+                    BolaoCopa.Domain.Enums.TournamentStage.GroupStage   => "Grupos",
+                    BolaoCopa.Domain.Enums.TournamentStage.RoundOf32    => "R32",
+                    BolaoCopa.Domain.Enums.TournamentStage.RoundOf16    => "Oitavas",
+                    BolaoCopa.Domain.Enums.TournamentStage.QuarterFinal => "Quartas",
+                    BolaoCopa.Domain.Enums.TournamentStage.SemiFinal    => "Semi",
+                    _ => "?"
+                };
+                Console.WriteLine($"  [{stage}] {m.HomeCode}×{m.AwayCode} {m.HomeScore}-{m.AwayScore} ({m.KickoffAt:dd/MM HH:mm})");
+            }
+            break;
+        }
+
+        case "ranking-history":
+        {
+            // Uso: ranking-history <bolao> [nome-parcial-jogador]
+            if (args.Length < 2) { Console.WriteLine("Uso: ranking-history <bolao> [nome-parcial]"); break; }
+            var rhCtx = sp.GetRequiredService<AppDbContext>();
+            var rhPool = await rhCtx.Pools.FirstOrDefaultAsync(p => p.Name == args[1] || p.InviteCode == args[1]);
+            if (rhPool is null) { Console.WriteLine($"Bolão '{args[1]}' não encontrado."); break; }
+            string? focusName = args.Length > 2 ? args[2].ToLower() : null;
+
+            // Participantes do bolão com TotalPoints atual
+            var participants = await (
+                from pp in rhCtx.PoolParticipants
+                join u in rhCtx.Users on pp.UserId equals u.Id
+                where pp.PoolId == rhPool.Id
+                orderby u.Name
+                select new { u.Id, u.Name, pp.TotalPoints }
+            ).ToListAsync();
+
+            // Pontos do mata-mata por jogador (para deduzir do total e obter base pré-mata-mata)
+            var knockoutEarned = await (
+                from pred in rhCtx.Predictions
+                join m in rhCtx.Matches on pred.MatchId equals m.Id
+                where pred.PoolId == rhPool.Id && m.IsFinished && m.Stage != BolaoCopa.Domain.Enums.TournamentStage.GroupStage
+                select new { pred.UserId, pred.PointsEarned }
+            ).ToListAsync();
+            var knockoutEarnedByUser = knockoutEarned
+                .GroupBy(x => x.UserId)
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.PointsEarned));
+
+            // Base = TotalPoints atual - pontos mata-mata (inclui bônus de grupos)
+            var groupPts = participants.ToDictionary(
+                p => p.Id,
+                p => p.TotalPoints - knockoutEarnedByUser.GetValueOrDefault(p.Id, 0));
+
+            // Jogos do mata-mata finalizados, em ordem cronológica
+            var knockoutMatches = await (
+                from m in rhCtx.Matches
+                join ht in rhCtx.Teams on m.HomeTeamId equals ht.Id
+                join at in rhCtx.Teams on m.AwayTeamId equals at.Id
+                where m.IsFinished && m.Stage != BolaoCopa.Domain.Enums.TournamentStage.GroupStage
+                orderby m.KickoffAt
+                select new { m.Id, m.KickoffAt, m.Stage, m.HomeScore, m.AwayScore,
+                             HomeCode = ht.Code, AwayCode = at.Code }
+            ).ToListAsync();
+
+            if (!knockoutMatches.Any()) { Console.WriteLine("Nenhum jogo do mata-mata finalizado ainda."); break; }
+
+            // Palpites do mata-mata por jogo
+            var knockoutPreds = await (
+                from pred in rhCtx.Predictions
+                join m in rhCtx.Matches on pred.MatchId equals m.Id
+                where pred.PoolId == rhPool.Id && m.IsFinished && m.Stage != BolaoCopa.Domain.Enums.TournamentStage.GroupStage
+                select new { pred.UserId, pred.MatchId, pred.PointsEarned }
+            ).ToListAsync();
+            var predsByMatch = knockoutPreds
+                .GroupBy(p => p.MatchId)
+                .ToDictionary(g => g.Key, g => g.ToDictionary(p => p.UserId, p => p.PointsEarned));
+
+            static string StagePt(BolaoCopa.Domain.Enums.TournamentStage s) => s switch {
+                BolaoCopa.Domain.Enums.TournamentStage.RoundOf32    => "R32",
+                BolaoCopa.Domain.Enums.TournamentStage.RoundOf16    => "Oitavas",
+                BolaoCopa.Domain.Enums.TournamentStage.QuarterFinal => "Quartas",
+                BolaoCopa.Domain.Enums.TournamentStage.SemiFinal    => "Semi",
+                BolaoCopa.Domain.Enums.TournamentStage.ThirdPlace   => "3º lugar",
+                BolaoCopa.Domain.Enums.TournamentStage.Final        => "Final",
+                _ => "?"
+            };
+
+            // Acumular pontos e registrar posição após cada jogo
+            var cumulative = participants.ToDictionary(p => p.Id, p => groupPts[p.Id]);
+
+            Console.WriteLine($"\n🏆 {rhPool.Name} — EVOLUÇÃO DO RANKING (mata-mata)");
+            Console.WriteLine($"   Pontos de grupos contabilizados antes do mata-mata.\n");
+
+            // Linha de cabeçalho com posição inicial
+            var initialRanking = participants
+                .Select(p => new { p.Id, p.Name, Pts = cumulative[p.Id] })
+                .OrderByDescending(x => x.Pts).ThenBy(x => x.Name)
+                .Select((x, i) => new { x.Id, x.Name, x.Pts, Pos = i + 1 })
+                .ToList();
+
+            if (focusName != null) {
+                var init = initialRanking.FirstOrDefault(x => x.Name.ToLower().Contains(focusName));
+                if (init != null)
+                    Console.WriteLine($"  📍 ANTES DO MATA-MATA: {init.Pos}° {init.Name} — {init.Pts} pts");
+            } else {
+                Console.WriteLine("  📍 ANTES DO MATA-MATA:");
+                foreach (var x in initialRanking)
+                    Console.WriteLine($"      {x.Pos}° {x.Name} — {x.Pts} pts");
+            }
+            Console.WriteLine();
+
+            foreach (var km in knockoutMatches) {
+                var matchPreds = predsByMatch.GetValueOrDefault(km.Id, new());
+                foreach (var p in participants)
+                    if (matchPreds.TryGetValue(p.Id, out var earned))
+                        cumulative[p.Id] += earned;
+
+                var ranking = participants
+                    .Select(p => new { p.Id, p.Name, Pts = cumulative[p.Id], MatchPts = matchPreds.GetValueOrDefault(p.Id, -1) })
+                    .OrderByDescending(x => x.Pts).ThenBy(x => x.Name)
+                    .Select((x, i) => new { x.Id, x.Name, x.Pts, x.MatchPts, Pos = i + 1 })
+                    .ToList();
+
+                var label = $"{StagePt(km.Stage)} {km.HomeCode}×{km.AwayCode} {km.HomeScore}-{km.AwayScore}";
+
+                if (focusName != null) {
+                    var player = ranking.FirstOrDefault(x => x.Name.ToLower().Contains(focusName));
+                    if (player != null) {
+                        var ptsLabel = player.MatchPts >= 0 ? $"+{player.MatchPts}" : "sem palpite";
+                        Console.WriteLine($"  [{label}]  {player.Pos}° {player.Name} — {player.Pts} pts ({ptsLabel})");
+                    }
+                } else {
+                    Console.WriteLine($"  [{label}]");
+                    foreach (var x in ranking) {
+                        var ptsLabel = x.MatchPts >= 0 ? $"+{x.MatchPts}" : "sem palpite";
+                        Console.WriteLine($"      {x.Pos}° {x.Name} — {x.Pts} pts ({ptsLabel})");
+                    }
+                    Console.WriteLine();
+                }
+            }
+            Console.WriteLine();
+            break;
+        }
 
         case "sync-results":
             await sp.GetRequiredService<IMatchSyncService>().SyncResultsAsync();
