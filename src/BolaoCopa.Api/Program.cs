@@ -161,7 +161,8 @@ if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sy
         or "recalc-all" or "report" or "setup-audit" or "audit-log" or "user-predictions" or "logins"
         or "export-predictions" or "set-prediction-all" or "add-participant" or "copy-predictions"
         or "copy-group-predictions" or "score-groups" or "group-bonus" or "sync-fixtures"
-        or "set-champion" or "check-champion" or "check-group-preds" or "ranking-history" or "missing-preds")
+        or "set-champion" or "check-champion" or "check-group-preds" or "ranking-history" or "missing-preds"
+        or "set-match-teams")
 {
     await using var cliScope = app.Services.CreateAsyncScope();
     var sp = cliScope.ServiceProvider;
@@ -894,6 +895,27 @@ if (args.Length > 0 && args[0] is "reset-tournament" or "import-fixtures" or "sy
             var count = await sp.GetRequiredService<IMatchSyncService>().ImportFixturesAsync();
             Console.WriteLine($"[import-fixtures] {count} jogo(s) real(is) importado(s).");
             break;
+
+        case "set-match-teams":
+        {
+            // Uso: set-match-teams <apiFixtureId> <codeCasa> <codeFora>
+            // Ex.: set-match-teams 100 ARG SUI
+            if (args.Length < 4) { Console.WriteLine("Uso: set-match-teams <apiFixtureId> <codeCasa> <codeFora>"); break; }
+            var smtCtx = sp.GetRequiredService<AppDbContext>();
+            if (!int.TryParse(args[1], out var fixtureId)) { Console.WriteLine("fixtureId inválido."); break; }
+            var match = await smtCtx.Matches.FirstOrDefaultAsync(m => m.ApiFootballFixtureId == fixtureId)
+                     ?? await smtCtx.Matches.FirstOrDefaultAsync(m => m.FifaMatchCode == args[1]);
+            if (match is null) { Console.WriteLine($"Jogo com ApiFixtureId={fixtureId} não encontrado."); break; }
+            var home = await smtCtx.Teams.FirstOrDefaultAsync(t => t.Code == args[2].ToUpper());
+            var away = await smtCtx.Teams.FirstOrDefaultAsync(t => t.Code == args[3].ToUpper());
+            if (home is null) { Console.WriteLine($"Time '{args[2]}' não encontrado."); break; }
+            if (away is null) { Console.WriteLine($"Time '{args[3]}' não encontrado."); break; }
+            match.HomeTeamId = home.Id;
+            match.AwayTeamId = away.Id;
+            await smtCtx.SaveChangesAsync();
+            Console.WriteLine($"[set-match-teams] Fixture {fixtureId} → {home.Code} {home.Name} x {away.Name} {away.Code}");
+            break;
+        }
 
         case "missing-preds":
         {
